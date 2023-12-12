@@ -71,6 +71,26 @@ using namespace hoomd;
 #endif
 
 
+#ifndef __ERRCHK_CUH__
+#define __ERRCHK_CUH__
+//! Function to check for errors
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+/*!
+    \param code   returned error code
+    \param file   which file the error occured in
+    \param line   which line error check was tripped
+    \param abort  whether to kill code upon error trigger
+*/
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+#endif
+
 /*! \file Brownian.cu
     \brief Defines functions for PSE calculation of the Brownian Displacements
 
@@ -345,6 +365,11 @@ __global__ void gpu_stokes_BrownianGridGenerate_kernel(
 }
 
 
+
+
+
+
+
 /*!
 	Use Lanczos method to compute Mreal^0.5 * psi
 
@@ -391,6 +416,7 @@ void gpu_stokes_BrealLanczos_wrap(
 	Scalar *dot_sum;
 	cudaMalloc( (void**)&dot_sum, grid_for_dot*sizeof(Scalar) );
 
+gpuErrchk(cudaPeekAtLastError());
 	// Allocate storage
 	// 
 	int m_in = m;
@@ -410,8 +436,8 @@ void gpu_stokes_BrealLanczos_wrap(
 	W1 = (float *)malloc( (m_max)*sizeof(float) );
 	float *Tm;
 	Tm = (float *)malloc( m_max*sizeof(float) );
-	Scalar *d_Tm;
-	cudaMalloc( (void**)&d_Tm, m_max * sizeof(Scalar) );
+	float *d_Tm;
+	cudaMalloc( (void**)&d_Tm, m_max * sizeof(float) );
 
 	// Vectors for Lanczos iterations
 	Scalar4 *d_v, *d_vj, *d_vjm1;
@@ -432,22 +458,25 @@ void gpu_stokes_BrealLanczos_wrap(
 	cudaMalloc( (void**)&d_vel_old, group_size*sizeof(Scalar4) );
 	cudaMalloc( (void**)&d_Mpsi, group_size*sizeof(Scalar4) );
 	Scalar psiMpsi;
-
+	
 	// Temporary pointer
 	Scalar4 *d_temp;
-
+gpuErrchk(cudaPeekAtLastError());
 	// Copy random vector to v0
 	cudaMemcpy( d_vj, d_psi, group_size*sizeof(Scalar4), cudaMemcpyDeviceToDevice );
-	
+
 	// Compute the norm of the d_psi (also the norm of basis vector v0)
         Scalar vnorm;
 	gpu_stokes_DotStepOne_kernel<<< grid_for_dot, thread_for_dot, thread_for_dot*sizeof(Scalar) >>>(d_vj, d_vj, dot_sum, group_size, d_group_members);
+gpuErrchk(cudaPeekAtLastError());
 	gpu_stokes_DotStepTwo_kernel<<< 1, thread_for_dot, thread_for_dot*sizeof(Scalar) >>>(dot_sum, grid_for_dot);
-	cudaMemcpy(&vnorm, dot_sum, sizeof(Scalar), cudaMemcpyDeviceToHost);
+gpuErrchk(cudaPeekAtLastError());
+cudaSetDevice(0);
+    cudaMemcpy(&vnorm, dot_sum, sizeof(Scalar), cudaMemcpyDeviceToHost);
+gpuErrchk(cudaPeekAtLastError());
 	vnorm = sqrtf( vnorm );
 
 	Scalar psinorm = vnorm;
-
     	// Compute psi * M * psi ( for step norm )
     	gpu_stokes_Mreal_kernel<<<grid, threads>>>(d_pos, d_Mpsi, d_psi, group_size, xi, d_ewaldC1, self, ewald_cut, ewald_n, ewald_dr, d_group_members, box, d_n_neigh, d_nlist, d_headlist );
     	gpu_stokes_DotStepOne_kernel<<< grid_for_dot, thread_for_dot, thread_for_dot*sizeof(Scalar) >>>(d_psi, d_Mpsi, dot_sum, group_size, d_group_members);
@@ -459,7 +488,6 @@ void gpu_stokes_BrealLanczos_wrap(
         // First iteration, vjm1 = 0, vj = psi / norm( psi )
 	gpu_stokes_LinearCombination_kernel<<<grid, threads>>>(d_vj, d_vj, d_vjm1, 0.0, 0.0, group_size, d_group_members);
 	gpu_stokes_LinearCombination_kernel<<<grid, threads>>>(d_vj, d_vj, d_vj, 1.0/vnorm, 0.0, group_size, d_group_members);
-
 	// Start by computing (m-1) iterations, so that the stepnorm for the given
 	// number of iterations can be compute
 	m = m_in - 1;
@@ -570,7 +598,7 @@ void gpu_stokes_BrealLanczos_wrap(
 	}
 
 	// Tm = W * W1 = W * Lambda^(1/2) * W^T * e1
-	float tempsum;
+	Scalar tempsum;
 	for ( int ii = 0; ii < m; ++ii ){
 	    tempsum = 0.0;
 	    for ( int jj = 0; jj < m; ++jj ){
@@ -582,7 +610,7 @@ void gpu_stokes_BrealLanczos_wrap(
 	}
 
 	// Copy matrix to GPU
-	cudaMemcpy( d_Tm, Tm, m*sizeof(Scalar), cudaMemcpyHostToDevice );
+	cudaMemcpy( d_Tm, Tm, m*sizeof(float), cudaMemcpyHostToDevice );
 
 	// Multiply basis vectors by Tm, [ V0, V1, ..., Vm-1 ] * Tm
 	gpu_stokes_MatVecMultiply_kernel<<<grid,threads>>>(d_V, d_Tm, d_vel, group_size, m);
@@ -698,7 +726,7 @@ void gpu_stokes_BrealLanczos_wrap(
 		}
 
 		// Tm = W * W1 = W * Lambda^(1/2) * W^T * e1
-		float tempsum;
+		Scalar tempsum;
 		for ( int ii = 0; ii < m; ++ii ){
 		    tempsum = 0.0;
 		    for ( int jj = 0; jj < m; ++jj ){
@@ -737,7 +765,7 @@ void gpu_stokes_BrealLanczos_wrap(
 
 	// Rescale by original norm of Psi and include thermal variance
 	gpu_stokes_LinearCombination_kernel<<<grid, threads>>>(d_vel, d_vel, d_vel, psinorm * sqrtf(2.0*T/dt), 0.0, group_size, d_group_members);
-	
+
 	//
 	// Clean up
 	//
@@ -812,12 +840,10 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 	// Real space velocity to add
 	Scalar4 *d_vel2;
 	cudaMalloc( (void**)&d_vel2, group_size*sizeof(Scalar4) );
-	
 	// Generate uniform distribution (-1,1) on d_psi
 	Scalar4 *d_psi;
 	cudaMalloc( (void**)&d_psi, group_size*sizeof(Scalar4) );
 	gpu_stokes_BrownianGenerate_kernel<<<grid, threads>>>( d_psi, group_size, d_group_members, timestep, seed );
-	
 	// Spreading and contraction grid information and parameters
 	dim3 Cgrid( group_size, 1, 1);
 	int B = ( P < 10 ) ? P : 10;
@@ -836,18 +862,14 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 	gpu_stokes_ZeroGrid_kernel<<<gridNBlock,gridBlockSize>>>(d_gridX,NxNyNz);
 	gpu_stokes_ZeroGrid_kernel<<<gridNBlock,gridBlockSize>>>(d_gridY,NxNyNz);
 	gpu_stokes_ZeroGrid_kernel<<<gridNBlock,gridBlockSize>>>(d_gridZ,NxNyNz);
-	
 	// Spread forces onto grid
 	gpu_stokes_Spread_kernel<<<Cgrid, Cthreads>>>( d_pos, d_net_force, d_gridX, d_gridY, d_gridZ, group_size, Nx, Ny, Nz, d_group_members, box, P, gridh, xi, eta, prefac, expfac );
-	
 	// Perform FFT on gridded forces
 	cufftExecC2C(plan, d_gridX, d_gridX, CUFFT_FORWARD);
 	cufftExecC2C(plan, d_gridY, d_gridY, CUFFT_FORWARD);
 	cufftExecC2C(plan, d_gridZ, d_gridZ, CUFFT_FORWARD);
-	
 	// Apply wave space scaling to FFT'd forces
 	gpu_stokes_Green_kernel<<<gridNBlock,gridBlockSize>>>( d_gridX, d_gridY, d_gridZ, d_gridk, NxNyNz);
-	
 	
 	// ***************************************
 	// Wave Space Part of Brownian Calculation
@@ -858,7 +880,7 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 		gpu_stokes_BrownianGridGenerate_kernel<<<gridNBlock,gridBlockSize>>>( d_gridX, d_gridY, d_gridZ, d_gridk, NxNyNz, Nx, Ny, Nz, timestep, seed, T, dt, quadW );
 	
 	}
-	
+
 	// ************************************
 	// Finish the Wave Space Calculation
 	// ************************************
@@ -867,23 +889,20 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 	cufftExecC2C(plan, d_gridX, d_gridX, CUFFT_INVERSE);
 	cufftExecC2C(plan, d_gridY, d_gridY, CUFFT_INVERSE);
 	cufftExecC2C(plan, d_gridZ, d_gridZ, CUFFT_INVERSE);
-	
 	// Evaluate contribution of grid velocities at particle centers
-	gpu_stokes_Contract_kernel<<<Cgrid, Cthreads, (B*B*B+1)*sizeof(float3)>>>( d_pos, d_vel, d_gridX, d_gridY, d_gridZ, group_size, Nx, Ny, Nz, xi, eta, d_group_members, box, P, gridh, quadW*prefac, expfac );
-	
+	gpu_stokes_Contract_kernel<<<Cgrid, Cthreads, (B*B*B+1)*sizeof(Scalar3)>>>( d_pos, d_vel, d_gridX, d_gridY, d_gridZ, group_size, Nx, Ny, Nz, xi, eta, d_group_members, box, P, gridh, quadW*prefac, expfac );
 	// ***************************************
 	// Real Space Part of Both Calculations
 	// ***************************************
 	
 	// Deterministic part
 	gpu_stokes_Mreal_kernel<<<grid, threads>>>(d_pos, d_vel2, d_net_force, group_size, xi, d_ewaldC1, self, ewald_cut, ewald_n, ewald_dr, d_group_members, box, d_n_neigh, d_nlist, d_headlist );
-	
+
 	// Add to velocity
 	gpu_stokes_LinearCombination_kernel<<<grid, threads>>>(d_vel2, d_vel, d_vel, 1.0, 1.0, group_size, d_group_members);
-	
+
 	// Stochastic
 	if ( T > 0.0 ){
-	
 		gpu_stokes_BrealLanczos_wrap( 	d_psi,
 						d_pos,
 						d_group_members,
@@ -910,12 +929,11 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 						gridNBlock,
 						gridh,
 			    			self );
-	
 		// Add to velocity
 		gpu_stokes_LinearCombination_kernel<<<grid, threads>>>(d_vel2, d_vel, d_vel, 1.0, 1.0, group_size, d_group_members);
-	
+	gpuErrchk(cudaPeekAtLastError());
 	}
-	
+
 	// Free Memory
 	cudaFree( d_vel2 );
 	cudaFree( d_psi );

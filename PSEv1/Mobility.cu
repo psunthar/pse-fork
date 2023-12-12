@@ -67,9 +67,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #endif
 
-//! command to convert floats or doubles to integers
+//! command to convert Scalars or doubles to integers
 #ifdef SINGLE_PRECISION
-#define __scalar2int_rd __float2int_rd
+#define __scalar2int_rd __Scalar2int_rd
 #else
 #define __scalar2int_rd __double2int_rd
 #endif
@@ -84,9 +84,9 @@ extern __shared__ Scalar partial_sum[];
 extern __shared__ Scalar4 shared_Fpos[];
 
 //! Texture for reading table values
-scalar4_tex_t tables1_tex;
+texture<Scalar4, 1, cudaReadModeElementType> tables1_tex;
 //! Texture for reading particle positions
-scalar4_tex_t pos_tex;
+texture<Scalar4, 1, cudaReadModeElementType> pos_tex;
 
 //! Spread particle quantities to the grid ( ALL PARTICLES SAME SIZE ) -- give one block per particle
 /*! \param d_pos            positions of the particles, actually they are fetched on texture memory
@@ -130,7 +130,6 @@ __global__ void gpu_stokes_Spread_kernel(
 				Scalar prefac,
 				Scalar expfac 
 				){
-
 	// Shared memory for particle force and position, so that each block
 	// only has to read once
 	__shared__ Scalar3 shared[2]; // 16 kb max
@@ -149,7 +148,7 @@ __global__ void gpu_stokes_Spread_kernel(
 	
 	// Initialize shared memory and get particle position
 	if ( thread_offset == 0 ){
-		Scalar4 tpos = texFetchScalar4(d_pos, pos_tex, idx);
+		Scalar4 tpos = __ldg(d_pos + idx);
 		pos_shared[0].x = tpos.x; 
 		pos_shared[0].y = tpos.y; 
 		pos_shared[0].z = tpos.z;
@@ -248,7 +247,6 @@ __global__ void gpu_stokes_Spread_kernel(
 			}// kk
 		}// jj
 	}// ii
-
 }
 
 //! Compute the velocity from the force moments on the grid (Same Size Particles)
@@ -268,15 +266,14 @@ __global__ void gpu_stokes_Green_kernel(
 				Scalar4 *gridk, 
 				unsigned int NxNyNz
 				) {
-
 	int tid = blockDim.x * blockIdx.x + threadIdx.x;
 	
 	if ( tid < NxNyNz ) {
 	
 	  // Read the FFT force from global memory
-	  Scalar2 fX = gridX[tid];  
-	  Scalar2 fY = gridY[tid];
-	  Scalar2 fZ = gridZ[tid];
+	  Scalar2 fX = make_scalar2( gridX[tid].x, gridX[tid].y );  
+	  Scalar2 fY = make_scalar2( gridY[tid].x, gridY[tid].y );
+	  Scalar2 fZ = make_scalar2( gridZ[tid].x, gridZ[tid].y );
 	
 	  // Current wave-space vector 
 	  Scalar4 tk = gridk[tid];
@@ -290,9 +287,12 @@ __global__ void gpu_stokes_Green_kernel(
 	  Scalar B = (tid==0) ? 0.0 : tk.w * ( sinf( k ) / k ) * ( sinf( k ) / k );
 	
 	  // Write the velocity to global memory
-	  gridX[tid] = make_scalar2( ( fX.x - tk.x * kdF.x ) * B, ( fX.y - tk.x * kdF.y ) * B );
-	  gridY[tid] = make_scalar2( ( fY.x - tk.y * kdF.x ) * B, ( fY.y - tk.y * kdF.y ) * B );
-	  gridZ[tid] = make_scalar2( ( fZ.x - tk.z * kdF.x ) * B, ( fZ.y - tk.z * kdF.y ) * B );
+	  gridX[tid].x = ( fX.x - tk.x * kdF.x ) * B;
+      gridX[tid].y = ( fX.y - tk.x * kdF.y ) * B;
+	  gridY[tid].x = ( fY.x - tk.y * kdF.x ) * B;
+      gridY[tid].y = ( fY.y - tk.y * kdF.y ) * B;
+	  gridZ[tid].x = ( fZ.x - tk.z * kdF.x ) * B;
+      gridZ[tid].y = ( fZ.y - tk.z * kdF.y ) * B;
 	
 	
 	}
@@ -364,7 +364,7 @@ __global__ void gpu_stokes_Contract_kernel(
 	// Initialize shared memory and get particle position
 	velocity[thread_offset] = make_scalar3(0.0,0.0,0.0);
 	if ( thread_offset == 0 ){
-		Scalar4 tpos = texFetchScalar4(d_pos, pos_tex, idx);
+		Scalar4 tpos = __ldg(d_pos + idx);
 		pos_shared[0] = make_scalar3( tpos.x, tpos.y, tpos.z ); 
 	}
 	__syncthreads();
@@ -552,7 +552,7 @@ void gpu_stokes_Mwave_wrap(
 	gpu_stokes_ZeroGrid_kernel<<<gridNBlock,gridBlockSize>>>(d_gridX,NxNyNz);
 	gpu_stokes_ZeroGrid_kernel<<<gridNBlock,gridBlockSize>>>(d_gridY,NxNyNz);
 	gpu_stokes_ZeroGrid_kernel<<<gridNBlock,gridBlockSize>>>(d_gridZ,NxNyNz);
-	
+
 	// Spread forces onto grid
 	gpu_stokes_Spread_kernel<<<Cgrid, Cthreads>>>( d_pos, d_net_force, d_gridX, d_gridY, d_gridZ, group_size, Nx, Ny, Nz, d_group_members, box, P, gridh, xi, eta, prefac, expfac );
 	
@@ -570,8 +570,8 @@ void gpu_stokes_Mwave_wrap(
 	cufftExecC2C(plan, d_gridZ, d_gridZ, CUFFT_INVERSE);
 	
 	// Evaluate contribution of grid velocities at particle centers
-	gpu_stokes_Contract_kernel<<<Cgrid, Cthreads, (B*B*B+1)*sizeof(float3)>>>( d_pos, d_vel, d_gridX, d_gridY, d_gridZ, group_size, Nx, Ny, Nz, xi, eta, d_group_members, box, P, gridh, quadW*prefac, expfac );
- 
+	gpu_stokes_Contract_kernel<<<Cgrid, Cthreads, (B*B*B+1)*sizeof(Scalar3)>>>( d_pos, d_vel, d_gridX, d_gridY, d_gridZ, group_size, Nx, Ny, Nz, xi, eta, d_group_members, box, P, gridh, quadW*prefac, expfac );
+	
 }
 
 // Add real space Ewald summation to velocity of each particle
@@ -625,7 +625,7 @@ __global__ void gpu_stokes_Mreal_kernel(
 		unsigned int head_idx = d_headlist[idx];
 		
 		// Particle position and table ID
-		Scalar4 posi = texFetchScalar4(d_pos, pos_tex, idx);
+		Scalar4 posi = __ldg(d_pos + idx);
 		
 		// Self contribution
 		Scalar4 F = d_net_force[idx];
@@ -641,7 +641,7 @@ __global__ void gpu_stokes_Mreal_kernel(
 			unsigned int cur_j = d_nlist[ head_idx + neigh_idx ];	
 	
 			// Position and size of neighbor particle
-			Scalar4 posj = texFetchScalar4(d_pos, pos_tex, cur_j);
+			Scalar4 posj = __ldg(d_pos + cur_j);
 		
 			// Distance vector between current particle and neighbor
 			Scalar3 r = make_scalar3( posi.x - posj.x, posi.y - posj.y, posi.z - posj.z );
@@ -661,7 +661,7 @@ __global__ void gpu_stokes_Mreal_kernel(
 				int r_ind = __scalar2int_rd( ewald_n * ( dist - ewald_dr ) / ( ewald_cut - ewald_dr ) );
 				int offset = r_ind;
 		
-				Scalar4 tewaldC1 = texFetchScalar4(d_ewaldC1, tables1_tex, offset);
+				Scalar4 tewaldC1 = __ldg(d_ewaldC1 + offset);
 		
 				// Linear interpolation of table
 				Scalar fac = dist / ewald_dr - r_ind - Scalar(1.0);
@@ -766,7 +766,7 @@ void gpu_stokes_Mobility_wrap(
 	
 	// Add the wave space contribution to the velocity
 	gpu_stokes_Mwave_wrap( d_pos, d_vel1, d_net_force, d_group_members, group_size, box, xi, eta, d_gridk, d_gridX, d_gridY, d_gridZ, plan, Nx, Ny, Nz, NxNyNz, grid, threads, gridBlockSize, gridNBlock, P, gridh );
-	
+	fprintf(stderr,"GPUassert: %s\n", cudaGetErrorString(cudaPeekAtLastError()));
 	// Add the real space contribution to the velocity
 	//
 	// Real space calculation takes care of self contributions

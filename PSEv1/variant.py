@@ -5,6 +5,7 @@ from hoomd.PSEv1 import _PSEv1
 from hoomd.PSEv1 import shear_function
 
 from hoomd import variant
+from hoomd.variant import _variant
 
 from hoomd import _hoomd
 import hoomd

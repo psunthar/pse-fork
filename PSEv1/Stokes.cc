@@ -444,7 +444,7 @@ void Stokes::integrateStepOne(unsigned int timestep)
 		return;
 
 	// Get particle forces
-	const GPUArray< Scalar4 >& net_force = m_pdata->getNetForce();
+	const GlobalArray< Scalar4 >& net_force = m_pdata->getNetForce();
 
 	// profile this step
 	if (m_prof)

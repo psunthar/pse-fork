@@ -64,9 +64,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #endif
 
-//! command to convert floats or doubles to integers
+//! command to convert Scalars or doubles to integers
 #ifdef SINGLE_PRECISION
-#define __scalar2int_rd __float2int_rd
+#define __scalar2int_rd __Scalar2int_rd
 #else
 #define __scalar2int_rd __double2int_rd
 #endif
@@ -91,7 +91,8 @@ void gpu_stokes_ZeroGrid_kernel(CUFFTCOMPLEX *grid, unsigned int NxNyNz) {
 	
 	if ( tid < NxNyNz ) {
 	
-		grid[tid] = make_scalar2( 0.0, 0.0 );  
+		grid[tid].x = 0.0;  
+		grid[tid].y = 0.0;  
 	
 	}
 }
@@ -250,7 +251,7 @@ __global__ void gpu_stokes_DotStepTwo_kernel(
 
 __global__ void gpu_stokes_MatVecMultiply_kernel(
 						Scalar4 *d_A, 
-						Scalar *d_x, 
+						float *d_x, 
 						Scalar4 *d_b, 
 						unsigned int group_size, 
 						int m

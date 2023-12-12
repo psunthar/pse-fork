@@ -71,9 +71,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #endif
 
-//! command to convert floats or doubles to integers
+//! command to convert Scalars or doubles to integers
 #ifdef SINGLE_PRECISION
-#define __scalar2int_rd __float2int_rd
+#define __scalar2int_rd __Scalar2int_rd
 #else
 #define __scalar2int_rd __double2int_rd
 #endif
@@ -108,9 +108,9 @@ extern __shared__ Scalar partial_sum[];
 extern __shared__ Scalar4 shared_Fpos[];
 
 //! Texture for reading table values
-scalar4_tex_t tables1_tex;
+texture<Scalar4, 1, cudaReadModeElementType> tables1_tex;
 //! Texture for reading particle positions
-scalar4_tex_t pos_tex;
+texture<Scalar4, 1, cudaReadModeElementType> pos_tex;
 
 //! Takes the integration on a group of particles
 /*! \param d_pos            array of particle positions
@@ -282,17 +282,19 @@ cudaError_t gpu_stokes_step_one(
 	// block for grid calculation
 	int gridBlockSize = ( NxNyNz > block_size ) ? block_size : NxNyNz;
 	int gridNBlock = ( NxNyNz + gridBlockSize - 1 ) / gridBlockSize ; 
-	
+    size_t offset;
 	// Get the textured tables for real space Ewald sum tabulation
 	tables1_tex.normalized = false; // Not normalized
 	tables1_tex.filterMode = cudaFilterModeLinear; // Filter mode: floor of the index
+    tables1_tex.channelDesc = cudaCreateChannelDesc<float>();
 	// One dimension, Read mode: ElementType(Get what we write)
-	cudaBindTexture(0, tables1_tex, d_ewaldC1, sizeof(Scalar4) * (ewald_n+1)); // This was a bug in former versions!
-	
+	cudaBindTexture(&offset, tables1_tex, d_ewaldC1, sizeof(Scalar4) * (ewald_n+1)); // This was a bug in former versions!
+
 	// Same for the positions and forces
 	pos_tex.normalized = false; // Not normalized
 	pos_tex.filterMode = cudaFilterModePoint; // Filter mode: floor of the index
-	cudaBindTexture(0, pos_tex, d_pos, sizeof(Scalar4) * N_total);
+    pos_tex.channelDesc = cudaCreateChannelDesc<float>();
+	cudaBindTexture(&offset, pos_tex, d_pos, sizeof(Scalar4) * N_total);
 
 	// Get sheared grid vectors
     	gpu_stokes_SetGridk_kernel<<<gridNBlock,gridBlockSize>>>(d_gridk,Nx,Ny,Nz,NxNyNz,box,xi,eta);
@@ -338,7 +340,7 @@ cudaError_t gpu_stokes_step_one(
 			        			cheb_error,
 							self );
 
-
+gpuErrchk(cudaPeekAtLastError());
 	// Use forward Euler integration to move the particles according the velocity
 	// computed from the Mobility and Brownian calculations
 	gpu_stokes_step_one_kernel<<< grid, threads >>>(

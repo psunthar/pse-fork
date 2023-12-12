@@ -78,7 +78,7 @@ __global__ void gpu_stokes_DotStepOne_kernel(Scalar4 *d_a, Scalar4 *d_b, Scalar 
 
 __global__ void gpu_stokes_DotStepTwo_kernel(Scalar *dot_sum, unsigned int num_partial_sums);
 
-__global__ void gpu_stokes_MatVecMultiply_kernel(Scalar4 *d_A, Scalar *d_x, Scalar4 *d_b, unsigned int group_size, int m);
+__global__ void gpu_stokes_MatVecMultiply_kernel(Scalar4 *d_A, float *d_x, Scalar4 *d_b, unsigned int group_size, int m);
 
 __global__ void gpu_stokes_SetGridk_kernel(Scalar4 *gridk, int Nx, int Ny, int Nz, unsigned int NxNyNz, BoxDim box, Scalar xi, Scalar eta);
 
