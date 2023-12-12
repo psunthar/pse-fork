@@ -5,18 +5,26 @@
 #include "ShearFunctionWrap.h"
 #include "SpecificShearFunction.h"
 
-// Include pybind11
-#include <hoomd/extern/pybind/include/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 
-// specify the python module. Note that the name must explicitly match the PROJECT() name provided in CMakeLists
-// (with an underscore in front)
-PYBIND11_MODULE(_PSEv1, m)
+namespace hoomd
+{
+    namespace md
     {
-    #ifdef ENABLE_CUDA
-	export_Stokes(m);
-    #endif
-    export_ShearFunction(m);
-    export_ShearFunctionWrap(m);
-    export_VariantShearFunction(m);
-    export_SpecificShearFunction(m);
-    }
+
+        // specify the python module. Note that the name must explicitly match 
+        // the PROJECT() name provided in CMakeLists 
+        // (with an underscore in front)
+        PYBIND11_MODULE(_PSEv1, m)
+        {
+// #ifdef ENABLE_CUDA
+#ifdef ENABLE_HIP
+            export_Stokes(m);
+#endif
+            export_ShearFunction(m);
+            export_ShearFunctionWrap(m);
+            export_VariantShearFunction(m);
+            export_SpecificShearFunction(m);
+        }
+    } // end namespace md
+} // end namespace hoomd

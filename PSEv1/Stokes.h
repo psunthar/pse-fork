@@ -77,7 +77,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #error This header cannot be compiled by nvcc
 #endif
 
-#include <hoomd/extern/pybind/include/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 
 //! Integrates the system forward considering hydrodynamic interactions by GPU
 /*! Implements overdamped integration (one step) through IntegrationMethodTwoStep interface, runs on the GPU
