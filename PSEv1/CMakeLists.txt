@@ -2,6 +2,14 @@
 
 set(COMPONENT_NAME PSEv1)
 
+# Check that the HOOMD build configuration supports plugin dependencies
+if(NOT BUILD_MD)
+    message(WARNING "The HOOMD build configuration does not support MD. Skipping build of "
+            "plugin component ${COMPONENT_NAME}.")
+    return()
+endif()
+
+# Specify any C++ sources
 set(_${COMPONENT_NAME}_sources
     module.cc
     Stokes.cc
@@ -11,6 +19,7 @@ set(_${COMPONENT_NAME}_sources
     VariantShearFunction.cc
     )
 
+# Specify any CUDA sources
 set(_${COMPONENT_NAME}_cu_sources
     Stokes.cu
     Brownian.cu
@@ -18,11 +27,19 @@ set(_${COMPONENT_NAME}_cu_sources
     Mobility.cu
     )
 
-if (ENABLE_CUDA)
-CUDA_COMPILE(_CUDA_GENERATED_FILES ${_${COMPONENT_NAME}_cu_sources} OPTIONS ${CUDA_ADDITIONAL_OPTIONS} SHARED)
-endif (ENABLE_CUDA)
+if (ENABLE_HIP)
+    set(_cuda_sources ${_${COMPONENT_NAME}_cu_sources})
+endif (ENABLE_HIP)
 
-pybind11_add_module (_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES} NO_EXTRAS)
+# https://hoomd-blue.readthedocs.io/en/v4.4.0/migrating.html
+# Deprecated in HOOMD v3
+#if (ENABLE_CUDA)
+#CUDA_COMPILE(_CUDA_GENERATED_FILES ${_${COMPONENT_NAME}_cu_sources} OPTIONS ${CUDA_ADDITIONAL_OPTIONS} SHARED)
+#endif (ENABLE_CUDA)
+
+pybind11_add_module(_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_cuda_sources} NO_EXTRAS)
+#pybind11_add_module(_${COMPONENT_NAME} SHARED ${_${COMPONENT_NAME}_sources} ${_CUDA_GENERATED_FILES} NO_EXTRAS)
+
 if (APPLE)
 set_target_properties(_${COMPONENT_NAME} PROPERTIES INSTALL_RPATH "@loader_path/..;@loader_path")
 else()
@@ -44,8 +61,14 @@ endif( LAPACK_LIBRARIES-NOTFOUND )
 message(STATUS  "found lapack libraries: ${LAPACK_LIBRARIES}")
 set( LAPACK_LIBRARIES ${LAPACKE_LIBRARIES} ${LAPACK_LIBRARIES} ${CBLAS_LIBRARIES}  ${BLAS_LIBRARIES} )
 
-# link the library to its dependencies
-target_link_libraries(_${COMPONENT_NAME} PRIVATE ${HOOMD_LIBRARIES} ${LAPACK_LIBRARIES})
+# Link the library to its dependencies. Add or remove HOOMD extension modules (and/or external C++
+# libraries) as needed.
+target_link_libraries(_${COMPONENT_NAME}
+                      PUBLIC HOOMD::_hoomd
+                      PUBLIC HOOMD::_md
+                      PUBLLIC ${LAPACK_LIBRARIES}
+                      )
+# target_link_libraries(_${COMPONENT_NAME} PRIVATE ${HOOMD_LIBRARIES} ${LAPACK_LIBRARIES})
 
 # if we are compiling with MPI support built in, set appropriate
 # compiler/linker flags
@@ -58,26 +81,17 @@ if (ENABLE_MPI)
    endif(MPI_LINK_FLAGS)
 endif(ENABLE_MPI)
 
-fix_cudart_rpath(_${COMPONENT_NAME})
+# Deprecated in HOOMD v4 (see migration doc)
+# fix_cudart_rpath(_${COMPONENT_NAME})
 
-# install the library
+# Install the library.
 install(TARGETS _${COMPONENT_NAME}
-        LIBRARY DESTINATION ${PYTHON_MODULE_BASE_DIR}/${COMPONENT_NAME}
+        LIBRARY DESTINATION ${PYTHON_SITE_INSTALL_DIR}/${COMPONENT_NAME}
         )
 
 ################ Python only modules
-# copy python modules to the build directory to make it a working python package
-MACRO(copy_file file)
-    add_custom_command (
-        OUTPUT ${file}
-        DEPENDS ${file}
-        POST_BUILD
-        COMMAND    ${CMAKE_COMMAND}
-        ARGS       -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${file} ${CMAKE_CURRENT_BINARY_DIR}/${file}
-        COMMENT    "Copy hoomd/${COMPONENT_NAME}/${file}"
-    )
-ENDMACRO(copy_file)
-
+# Copy python modules to the build directory to make it a working python package. Any files that
+# should be copied to the install directory should be listed here.
 set(files
     __init__.py
     integrate.py
@@ -86,15 +100,10 @@ set(files
     )
 
 install(FILES ${files}
-        DESTINATION ${PYTHON_MODULE_BASE_DIR}/${COMPONENT_NAME}
+        DESTINATION ${PYTHON_SITE_INSTALL_DIR}/${COMPONENT_NAME}
        )
 
-foreach(file ${files})
-    copy_file(${file})
-endforeach()
+copy_files_to_build("${files}" "${COMPONENT_NAME}" "*.py")
 
-add_custom_target(copy_${COMPONENT_NAME} ALL DEPENDS ${files})
-
-if (BUILD_TESTING)
-    add_subdirectory(test-py)
-endif()
+# Python tests.
+#add_subdirectory(pytest)
