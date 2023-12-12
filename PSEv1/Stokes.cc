@@ -449,9 +449,12 @@ void Stokes::integrateStepOne(unsigned int timestep)
 	// Get particle forces
 	const GlobalArray< Scalar4 >& net_force = m_pdata->getNetForce();
 
+ /* Temporarily disable profiling, this object is not in HOOMD 4*/
+ /*
 	// profile this step
 	if (m_prof)
 		m_prof->push(m_exec_conf, "Stokes step 1 (no step 2)");
+*/
 
 	// Access all the needed data for the calculation
 	ArrayHandle<Scalar4> d_pos(m_pdata->getPositions(), access_location::device, access_mode::readwrite);
@@ -475,6 +478,7 @@ void Stokes::integrateStepOne(unsigned int timestep)
         // Calculate the shear rate of the current timestep
         Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
 
+	namespace kernel {
 	// perform the update on the GPU
 	gpu_stokes_step_one(
 				d_pos.data,
@@ -515,15 +519,18 @@ void Stokes::integrateStepOne(unsigned int timestep)
 				m_error,
 				current_shear_rate
 				);
+	}
 
 	if (m_exec_conf->isCUDAErrorCheckingEnabled())
 		CHECK_CUDA_ERROR();
 
+ /*
 	// done profiling
 	if (m_prof)
 		m_prof->pop(m_exec_conf);
-
+*/
 }
+
 
 /*! \param timestep Current time step
 \post Nothing is done.
