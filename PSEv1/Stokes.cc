@@ -426,6 +426,8 @@ void Stokes::setParams()
 
 }
 
+namespace kernel {
+
 /*! \param timestep Current time step
 \post Particle positions and velocities are moved forward to timestep+1
 */
@@ -478,7 +480,6 @@ void Stokes::integrateStepOne(unsigned int timestep)
         // Calculate the shear rate of the current timestep
         Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
 
-	namespace kernel {
 	// perform the update on the GPU
 	gpu_stokes_step_one(
 				d_pos.data,
@@ -519,7 +520,6 @@ void Stokes::integrateStepOne(unsigned int timestep)
 				m_error,
 				current_shear_rate
 				);
-	}
 
 	if (m_exec_conf->isCUDAErrorCheckingEnabled())
 		CHECK_CUDA_ERROR();
@@ -531,6 +531,7 @@ void Stokes::integrateStepOne(unsigned int timestep)
 */
 }
 
+} // end namespace kernel
 
 /*! \param timestep Current time step
 \post Nothing is done.
