@@ -11,6 +11,8 @@
 
 #include <cmath>
 
+namespace hoomd {
+namespace md {
 
 //! Simple sinusoidal shear implementing the abstract class ShearFunction
 class SinShearFunction : public ShearFunction
@@ -222,7 +224,10 @@ private:
     const std::shared_ptr<ShearFunction> m_window_func; //!< Window function
 };
 
-
+namespace detail {
 void export_SpecificShearFunction(pybind11::module& m);
+} // end namespace detail
+} // end namespace md
+} // end namespace hoomd
 
 #endif

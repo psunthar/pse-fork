@@ -11,6 +11,9 @@
 
 #include <cmath>
 
+namespace hoomd {
+namespace md {
+namespace detail {
 //! Abstract class representing the function of shear rate and shear strain
 /*! ShearFunction class, having three public pure virtual functions:
         1) getShearRate; 2) getStrain; and 3) getOffset
@@ -39,5 +42,8 @@ public:
 
 
 void export_ShearFunctionWrap(pybind11::module& m);
+} // end namespace detail
+} // end namespace md
+} // end namespace hoomd
 
 #endif

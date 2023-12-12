@@ -73,6 +73,11 @@ using namespace hoomd;
 
 #ifndef __ERRCHK_CUH__
 #define __ERRCHK_CUH__
+
+
+namespace hoomd {
+namespace kernel{
+
 //! Function to check for errors
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 /*!
@@ -940,3 +945,5 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 
 }
 
+} // end namespace kernel
+} // end namespace hoomd

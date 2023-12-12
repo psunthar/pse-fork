@@ -62,6 +62,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MOBILITYSAMESIZE_CUH__
 #define __MOBILITYSAMESIZE_CUH__
 
+
+namespace hoomd {
+namespace kernel{
+
 //! Definition for comxplex variable storage
 #ifdef SINGLE_PRECISION
 #define CUFFTCOMPLEX cufftComplex
@@ -158,3 +162,6 @@ __global__ void gpu_stokes_Contract_kernel( 	Scalar4 *d_pos,
 				 		Scalar expfac );
 
 #endif
+
+} // end namespace kernel
+} // end namespace hoomd

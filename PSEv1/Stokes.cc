@@ -68,6 +68,9 @@ using namespace std;
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 
+namespace hoomd {
+namespace md {
+
 /*! \file Stokes.cc
     \brief Contains code for the Stokes class
 */
@@ -529,6 +532,7 @@ void Stokes::integrateStepTwo(unsigned int timestep)
 {
 }
 
+namespace detail {
 void export_Stokes(pybind11::module& m)
     {
     pybind11::class_<Stokes, std::shared_ptr<Stokes> > (m, "Stokes", pybind11::base<IntegrationMethodTwoStep>()) 
@@ -538,6 +542,10 @@ void export_Stokes(pybind11::module& m)
                 .def("setShear", &Stokes::setShear)
         ;
     }
+
+} // end namespace detail
+} // end namespace md
+} // end namespace hoomd
 
 #ifdef WIN32
 #pragma warning( pop )

@@ -63,6 +63,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __BROWNIAN_CUH__
 #define __BROWNIAN_CUH__
 
+namespace hoomd {
+namespace kernel {
+
 //! Definition for complex variable storage
 #ifdef SINGLE_PRECISION
 #define CUFFTCOMPLEX cufftComplex
@@ -135,4 +138,7 @@ void gpu_stokes_CombinedMobilityBrownian_wrap(
 				Scalar self 
 				);
 
-#endif
+} // end namespace kernel
+} // end namespace hoomd
+
+#endif // __BROWNIAN_CUH__

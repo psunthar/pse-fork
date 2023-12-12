@@ -46,7 +46,7 @@ else()
 set_target_properties(_${COMPONENT_NAME} PROPERTIES INSTALL_RPATH "\$ORIGIN/..;\$ORIGIN")
 endif()
 
-# Find additional libraries to be linked for the plugin
+#q Find additional libraries to be linked for the plugin
 find_library( LAPACKE_LIBRARIES lapacke PATHS /usr/local/lapack-3.6.0/lib/ )
 find_library( LAPACK_LIBRARIES lapack PATHS /usr/local/lapack-3.6.0/lib/ )
 find_library( BLAS_LIBRARIES blas PATHS /usr/local/lapack-3.6.0/lib/ )

@@ -14,6 +14,9 @@
 
 using namespace std;
 
+namespace hoomd {
+namespace md {
+namespace detail {
 void export_SpecificShearFunction(pybind11::module& m)
 {
     
@@ -32,6 +35,9 @@ void export_SpecificShearFunction(pybind11::module& m)
     pybind11::class_<WindowedFunction, std::shared_ptr<WindowedFunction> >(m, "WindowedFunction", pybind11::base<ShearFunction>()) 
     .def(pybind11::init< std::shared_ptr<ShearFunction>, std::shared_ptr<ShearFunction> >());
 }
+} // end namespace detail
+} // end namespace md
+} // end namespace hoomd
 
 #ifdef WIN32
 #pragma warning( pop )

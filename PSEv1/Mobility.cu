@@ -67,6 +67,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #endif
 
+namespace hoomd {
+namespace kernel{
+
 //! command to convert Scalars or doubles to integers
 #ifdef SINGLE_PRECISION
 #define __scalar2int_rd __Scalar2int_rd
@@ -781,4 +784,6 @@ void gpu_stokes_Mobility_wrap(
  
 }
 
+} // end namespace kernel
+} // end namespace hoomd
 

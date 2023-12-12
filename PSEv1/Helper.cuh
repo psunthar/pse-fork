@@ -63,6 +63,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __HELPER_CUH__
 #define __HELPER_CUH__
 
+
+namespace hoomd {
+namespace kernel{
+
 //! Definition for comxplex variable storage
 #ifdef SINGLE_PRECISION
 #define CUFFTCOMPLEX cufftComplex
@@ -82,5 +86,7 @@ __global__ void gpu_stokes_MatVecMultiply_kernel(Scalar4 *d_A, float *d_x, Scala
 
 __global__ void gpu_stokes_SetGridk_kernel(Scalar4 *gridk, int Nx, int Ny, int Nz, unsigned int NxNyNz, BoxDim box, Scalar xi, Scalar eta);
 
+} // end namespace kernel
+} // end namespace hoomd
 
-#endif
+#endif // __HELPER_CUH__

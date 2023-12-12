@@ -72,7 +72,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ShearFunction.h"
 
-
 #ifdef NVCC
 #error This header cannot be compiled by nvcc
 #endif
@@ -81,86 +80,93 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //! Integrates the system forward considering hydrodynamic interactions by GPU
 /*! Implements overdamped integration (one step) through IntegrationMethodTwoStep interface, runs on the GPU
-*/
+ */
+
+namespace hoomd
+{
+namespace md
+{
 
 class Stokes : public IntegrationMethodTwoStep
+{
+public:
+    //! Constructs the integration method and associates it with the system
+    Stokes(std::shared_ptr<SystemDefinition> sysdef,
+           std::shared_ptr<ParticleGroup> group,
+           std::shared_ptr<Variant> T,
+           unsigned int seed,
+           std::shared_ptr<NeighborList> nlist,
+           Scalar xi,
+           Scalar error);
+
+    virtual ~Stokes();
+
+    //! Set a new temperature
+    /*! \param T new temperature to set */
+    void setT(std::shared_ptr<Variant> T)
     {
-    public:
+        m_T = T;
+    }
 
-        //! Constructs the integration method and associates it with the system
-        Stokes(	std::shared_ptr<SystemDefinition> sysdef,
-                std::shared_ptr<ParticleGroup> group,
-		std::shared_ptr<Variant> T,
-		unsigned int seed,
-		std::shared_ptr<NeighborList> nlist,
-		Scalar xi,
-		Scalar error);
+    //! Performs the first step of the integration
+    virtual void integrateStepOne(unsigned int timestep);
 
-        virtual ~Stokes();
+    //! Performs the second step of the integration
+    virtual void integrateStepTwo(unsigned int timestep);
 
-        //! Set a new temperature
-        /*! \param T new temperature to set */
-        void setT(std::shared_ptr<Variant> T)
-        {
-        	m_T = T;
-        }
+    //! Set the parameters for Ewald summation
+    void setParams();
 
-        //! Performs the first step of the integration
-        virtual void integrateStepOne(unsigned int timestep);
+    //! Set the shear rate and shear frequency
+    void setShear(std::shared_ptr<ShearFunction> shear_func, Scalar max_strain)
+    {
+        m_shear_func = shear_func;
+        m_max_strain = max_strain;
+    }
 
-        //! Performs the second step of the integration
-        virtual void integrateStepTwo(unsigned int timestep);
+protected:
+    std::shared_ptr<Variant> m_T; //!< The Temperature of the Stochastic Bath
+    unsigned int m_seed;          //!< The seed for the RNG of the Stochastic Bath
 
-        //! Set the parameters for Ewald summation
-        void setParams();
+    cufftHandle plan; //!< Used for the Fast Fourier Transformations performed on the GPU
 
-	//! Set the shear rate and shear frequency
-    	void setShear(std::shared_ptr<ShearFunction> shear_func, Scalar max_strain) {
-      		m_shear_func = shear_func;
-      		m_max_strain = max_strain;
-  	}
+    std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
 
-    protected:
+    std::shared_ptr<ShearFunction> m_shear_func; //!< mutable shared pointer towards a ShearFunction object
+    Scalar m_max_strain;                         //!< Maximum total strain before box resizing
 
-	std::shared_ptr<Variant> m_T;   //!< The Temperature of the Stochastic Bath
-        unsigned int m_seed;              //!< The seed for the RNG of the Stochastic Bath
+    Scalar m_xi;                 //!< ewald splitting parameter xi
+    Scalar m_ewald_cut;          //!< Real space cutoff
+    GPUArray<Scalar4> m_ewaldC1; //!< Real space Ewald coefficients table
+    int m_ewald_n;               //!< Number of entries in table of Ewald coefficients
+    Scalar m_ewald_dr;           //!< Real space Ewald table spacing
 
-        cufftHandle plan;       //!< Used for the Fast Fourier Transformations performed on the GPU
+    Scalar m_self; //!< self piece
 
-        std::shared_ptr<NeighborList> m_nlist;    //!< The neighborlist to use for the computation
+    int m_Nx; //!< Number of grid points in x direction
+    int m_Ny; //!< Number of grid points in y direction
+    int m_Nz; //!< Number of grid points in z direction
 
-	std::shared_ptr<ShearFunction> m_shear_func; //!< mutable shared pointer towards a ShearFunction object
-	Scalar m_max_strain; //!< Maximum total strain before box resizing
+    GPUArray<Scalar4> m_gridk;      //!< k-vectors for each grid point
+    GPUArray<CUFFTCOMPLEX> m_gridX; //!< x component of the grid based force
+    GPUArray<CUFFTCOMPLEX> m_gridY; //!< x component of the grid based force
+    GPUArray<CUFFTCOMPLEX> m_gridZ; //!< x component of the grid based force
 
-        Scalar m_xi;                   //!< ewald splitting parameter xi
-        Scalar m_ewald_cut;            //!< Real space cutoff
-        GPUArray<Scalar4> m_ewaldC1;   //!< Real space Ewald coefficients table
-        int m_ewald_n;                 //!< Number of entries in table of Ewald coefficients
-        Scalar m_ewald_dr;             //!< Real space Ewald table spacing
+    Scalar m_gaussm; //!< Gaussian width in standard deviations for wave space spreading/contraction
+    int m_gaussP;    //!< Number of points in each dimension for Gaussian support
+    Scalar m_eta;    //!< Gaussian spreading parameter
+    Scalar3 m_gridh; //!< Size of the grid box in 3 direction
 
-	Scalar m_self; //!< self piece
+    int m_m_Lanczos; //!< Number of Lanczos Iterations to use for calculation of Brownian displacement
 
-        int m_Nx;  //!< Number of grid points in x direction
-        int m_Ny;  //!< Number of grid points in y direction
-        int m_Nz;  //!< Number of grid points in z direction
+    Scalar m_error; //!< Error tolerance for all calculations
+};
 
-        GPUArray<Scalar4> m_gridk;        //!< k-vectors for each grid point
-        GPUArray<CUFFTCOMPLEX> m_gridX;   //!< x component of the grid based force
-        GPUArray<CUFFTCOMPLEX> m_gridY;   //!< x component of the grid based force
-        GPUArray<CUFFTCOMPLEX> m_gridZ;   //!< x component of the grid based force
-
-        Scalar m_gaussm;  //!< Gaussian width in standard deviations for wave space spreading/contraction
-        int m_gaussP;     //!< Number of points in each dimension for Gaussian support
-        Scalar m_eta;     //!< Gaussian spreading parameter
-        Scalar3 m_gridh;  //!< Size of the grid box in 3 direction
-
-        int m_m_Lanczos;       //!< Number of Lanczos Iterations to use for calculation of Brownian displacement
-
-        Scalar m_error;  //!< Error tolerance for all calculations
-
-    };
-
+namespace detail {
 //! Exports the Stokes class to python
-void export_Stokes(pybind11::module& m);
+void export_Stokes(pybind11::module &m);
+} // end namespace detail
 
-#endif
+} // end namespace md
+} // end namespace hoomd
+#endif // __STOKES_H__

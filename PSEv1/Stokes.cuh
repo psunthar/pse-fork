@@ -63,6 +63,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __STOKES_CUH__
 #define __STOKES_CUH__
 
+
+namespace hoomd {
+namespace kernel{
+
 //! Definition for comxplex variable storage
 #ifdef SINGLE_PRECISION
 #define CUFFTCOMPLEX cufftComplex
@@ -110,5 +114,7 @@ cudaError_t gpu_stokes_step_one(Scalar4 *d_pos,
 			     Scalar cheb_error,
 			     Scalar current_shear_rate);
 
+} // end namespace kernel
+} // end namespace hoomd
 
-#endif
+#endif // __STOKES_CUH__

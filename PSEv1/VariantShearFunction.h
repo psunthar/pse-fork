@@ -17,6 +17,12 @@
 #include <cmath>
 #include "ShearFunction.h"
 
+
+namespace hoomd
+{
+namespace md
+{
+
 //! Variant class for shear flowfield described by a function
 /*! This variant gives the strain value based on a function (which is ShearFunction type)
     The strain is wrapped based on the min_value and max_value since HOOMD cannot deal with
@@ -56,7 +62,13 @@ private:
     double m_value_range; //!< max_value - min_value
 };
 
+namespace detail {
 //! Exports VariantShearFunction class to python
 void export_VariantShearFunction(pybind11::module& m);
+} // end namespace detail
 
-#endif
+} // end namespace md
+} // end namespace hoomd
+
+
+#endif // __VARIANT_SHEAR_FUNCTION_H__

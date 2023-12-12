@@ -14,6 +14,10 @@
 
 using namespace std;
 
+namespace hoomd {
+namespace md {
+namespace detail {
+
 void export_ShearFunction(pybind11::module& m)
 {
     
@@ -24,6 +28,10 @@ void export_ShearFunction(pybind11::module& m)
     .def("getOffset", &ShearFunction::getOffset);
 
 }
+
+} // end namespace detail
+} // end namespace md
+} // end namespace hoomd
 
 #ifdef WIN32
 #pragma warning( pop )
