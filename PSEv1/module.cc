@@ -9,22 +9,25 @@
 
 namespace hoomd
 {
-    namespace md
-    {
+namespace md
+{
+namespace detail
+{
 
-        // specify the python module. Note that the name must explicitly match 
-        // the PROJECT() name provided in CMakeLists 
-        // (with an underscore in front)
-        PYBIND11_MODULE(_PSEv1, m)
-        {
+// specify the python module. Note that the name must explicitly match 
+// the PROJECT() name provided in CMakeLists 
+// (with an underscore in front)
+PYBIND11_MODULE(_PSEv1, m)
+{
 // #ifdef ENABLE_CUDA
 #ifdef ENABLE_HIP
-            export_Stokes(m);
+export_Stokes(m);
 #endif
-            export_ShearFunction(m);
-            export_ShearFunctionWrap(m);
-            export_VariantShearFunction(m);
-            export_SpecificShearFunction(m);
-        }
-    } // end namespace md
+    export_ShearFunction(m);
+    export_ShearFunctionWrap(m);
+    export_VariantShearFunction(m);
+    export_SpecificShearFunction(m);
+}
+} // end namespace detail
+} // end namespace md
 } // end namespace hoomd
