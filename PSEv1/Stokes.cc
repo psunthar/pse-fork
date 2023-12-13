@@ -438,7 +438,7 @@ void Stokes::integrateStepOne(unsigned int timestep)
 	// access the neighbor list
 	ArrayHandle<unsigned int> d_n_neigh(m_nlist->getNNeighArray(), access_location::device, access_mode::read);
 	ArrayHandle<unsigned int> d_nlist(m_nlist->getNListArray(), access_location::device, access_mode::read);
-	ArrayHandle<unsigned int> d_headlist(m_nlist->getHeadList(), access_location::device, access_mode::read);
+	ArrayHandle<size_t> d_headlist(m_nlist->getHeadList(), access_location::device, access_mode::read);
 
 	// Consistency check
 	unsigned int group_size = m_group->getNumMembers();
@@ -490,7 +490,7 @@ void Stokes::integrateStepOne(unsigned int timestep)
 				m_deltaT,
 				256,
 				d_net_force.data,
-				m_T->getValue(timestep),
+				m_T->operator()(timestep),
 				timestep,
 				m_seed,
 				m_xi,
