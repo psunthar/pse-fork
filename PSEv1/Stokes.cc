@@ -426,8 +426,6 @@ void Stokes::setParams()
 
 }
 
-namespace kernel {
-
 /*! \param timestep Current time step
 \post Particle positions and velocities are moved forward to timestep+1
 */
@@ -481,7 +479,7 @@ void Stokes::integrateStepOne(unsigned int timestep)
         Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
 
 	// perform the update on the GPU
-	gpu_stokes_step_one(
+	hoomd::kernel::gpu_stokes_step_one(
 				d_pos.data,
 				d_vel.data,
 				d_accel.data,
@@ -531,7 +529,6 @@ void Stokes::integrateStepOne(unsigned int timestep)
 */
 }
 
-} // end namespace kernel
 
 /*! \param timestep Current time step
 \post Nothing is done.
