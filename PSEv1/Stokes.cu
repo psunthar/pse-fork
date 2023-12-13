@@ -265,7 +265,7 @@ cudaError_t gpu_stokes_step_one(
 				const int Nz,
 				const unsigned int *d_n_neigh,
 				const unsigned int *d_nlist,
-				const unsigned int *d_headlist,
+				const size_t *d_headlist,
 				int& m_Lanczos,
 				const unsigned int N_total,
 				const int P,
