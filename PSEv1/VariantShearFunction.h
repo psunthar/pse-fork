@@ -53,6 +53,11 @@ public:
         return functionValue - m_value_range * floor( (functionValue - m_min_value) / m_value_range );
     }
 
+    // method nolonger implemented in hoomd4.Variant
+    virtual void setOffset(unsined int offset) {
+        m_offset = offset;
+    }
+
 private:
     const std::shared_ptr<ShearFunction> m_shear_func;
     const unsigned int m_total_timestep; //!< the total timestep for the Variant class
@@ -60,6 +65,9 @@ private:
     const double m_max_value; //!< maximum value of the output of the Variant class
     double m_end_value; //!< the last value of output after time > m_offset + m_total_timestep
     double m_value_range; //!< max_value - min_value
+
+    // additional attributes no longer defined in hoomd4.Variant
+    unsigned int    m_offset // Offset time used in _shear_function
 };
 
 namespace detail {
