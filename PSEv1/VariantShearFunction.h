@@ -54,7 +54,7 @@ public:
     }
 
     // method nolonger implemented in hoomd4.Variant
-    virtual void setOffset(unsined int offset) {
+    virtual void setOffset(unsigned int offset) {
         m_offset = offset;
     }
 
