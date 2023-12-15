@@ -54,20 +54,32 @@ public:
     }
 
     // method nolonger implemented in hoomd4.Variant
-    virtual void setOffset(unsigned int offset) {
+    void setOffset(unsigned int offset) {
         m_offset = offset;
     }
+
+    // min() and max() need to be implemented in a derived class
+    // as Variant is now an abstract class with these
+    // two pure virtual functions
+    void Scalar min() {
+        return m_min_value;
+    }
+    void Scalar max() {
+        return m_max_value;
+    }
+
+
 
 private:
     const std::shared_ptr<ShearFunction> m_shear_func;
     const unsigned int m_total_timestep; //!< the total timestep for the Variant class
-    const double m_min_value; //!< minimum value of the output of the Variant class
-    const double m_max_value; //!< maximum value of the output of the Variant class
-    double m_end_value; //!< the last value of output after time > m_offset + m_total_timestep
-    double m_value_range; //!< max_value - min_value
+    const Scalar m_min_value; //!< minimum value of the output of the Variant class
+    const Scalar m_max_value; //!< maximum value of the output of the Variant class
+    Scalar m_end_value; //!< the last value of output after time > m_offset + m_total_timestep
+    Scalar m_value_range; //!< max_value - min_value
 
     // additional attributes no longer defined in hoomd4.Variant
-    unsigned int    m_offset // Offset time used in _shear_function
+    unsigned int    m_offset; // Offset time used in _shear_function
 };
 
 namespace detail {
