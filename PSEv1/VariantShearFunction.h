@@ -61,10 +61,10 @@ public:
     // min() and max() need to be implemented in a derived class
     // as Variant is now an abstract class with these
     // two pure virtual functions
-    void Scalar min() {
+    Scalar min() {
         return m_min_value;
     }
-    void Scalar max() {
+    Scalar max() {
         return m_max_value;
     }
 
