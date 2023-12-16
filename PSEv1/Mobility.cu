@@ -609,7 +609,7 @@ __global__ void gpu_stokes_Mreal_kernel(
 			      	BoxDim box,
 			      	const unsigned int *d_n_neigh,
                               	const unsigned int *d_nlist,
-                              	const unsigned int *d_headlist
+                              	const size_t *d_headlist
 				){
  
 	// Index for current thread 
@@ -625,7 +625,7 @@ __global__ void gpu_stokes_Mreal_kernel(
 		
 		// Number of neighbors for current particle
 		unsigned int n_neigh = d_n_neigh[idx]; 
-		unsigned int head_idx = d_headlist[idx];
+		size_t head_idx = d_headlist[idx];
 		
 		// Particle position and table ID
 		Scalar4 posi = __ldg(d_pos + idx);
@@ -753,7 +753,7 @@ void gpu_stokes_Mobility_wrap(
 				const int Nz,
 				const unsigned int *d_n_neigh,
 				const unsigned int *d_nlist,
-				const unsigned int *d_headlist,
+				const size_t *d_headlist,
 				unsigned int NxNyNz,
 				dim3 grid,
 				dim3 threads,

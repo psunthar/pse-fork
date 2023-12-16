@@ -97,7 +97,7 @@ void gpu_stokes_Mobility_wrap( Scalar4 *d_pos,
 			       	const int Nz,
 			       	const unsigned int *d_n_neigh,
                                	const unsigned int *d_nlist,
-                               	const unsigned int *d_headlist,
+                               	const size_ *d_headlist,
 			       	unsigned int NxNyNz,
 			       	dim3 grid,
 			       	dim3 threads,
@@ -121,7 +121,7 @@ void gpu_stokes_Mreal_kernel( 	Scalar4 *d_pos,
 			      	BoxDim box,
 			      	const unsigned int *d_n_neigh,
                               	const unsigned int *d_nlist,
-                              	const unsigned int *d_headlist );
+                              	const size_t *d_headlist );
 
 __global__ void gpu_stokes_Spread_kernel( 	Scalar4 *d_pos,
 				    		Scalar4 *d_net_force,
