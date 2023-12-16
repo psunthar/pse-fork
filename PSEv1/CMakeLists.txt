@@ -66,7 +66,7 @@ set( LAPACK_LIBRARIES ${LAPACKE_LIBRARIES} ${LAPACK_LIBRARIES} ${CBLAS_LIBRARIES
 target_link_libraries(_${COMPONENT_NAME}
                       PUBLIC HOOMD::_hoomd
                       PUBLIC HOOMD::_md
-                      PUBLLIC ${LAPACK_LIBRARIES}
+                      PUBLIC ${LAPACK_LIBRARIES}
                       )
 # target_link_libraries(_${COMPONENT_NAME} PRIVATE ${HOOMD_LIBRARIES} ${LAPACK_LIBRARIES})
 
