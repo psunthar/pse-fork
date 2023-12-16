@@ -57,7 +57,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Brownian.cuh"
 #include "Helper.cuh"
 
-#include "hoomd/Saru.h"
+#include "hoomd/RandomNumbers.h"
 #include "hoomd/TextureTools.h"
 
 #include <stdio.h>

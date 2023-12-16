@@ -54,7 +54,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Mobility.cuh"
 #include "Helper.cuh"
 
-#include "hoomd/Saru.h"
+#include "hoomd/RNGIdentifiers.h"
+#include "hoomd/RandomNumbers.h"
 #include "hoomd/TextureTools.h"
 using namespace hoomd;
 
@@ -139,14 +140,19 @@ __global__ void gpu_stokes_BrownianGenerate_kernel(
 		unsigned int idx = d_group_members[group_idx];
 
 		// Initialize random number generator
-		detail::Saru s(idx, timestep + seed);
+		// Revised logic from TwoStepBDGPU.cu as Saru removed from HOOMD 3+
+		RandomGenerator rng(hoomd::Seed(RNGIdentifier::TwoStepBD, timestep, seed),
+                            hoomd::Counter(idx));
+							// using idx instead of ptag = d_tag[idx]
 
 		// Draw numbers from a Uniform distribution (-sqrt(3),sqrt(3),
 		// so that variance = 1/3
 		Scalar sqrt3 = 1.73205080757;
-		Scalar randomx = s.f( -sqrt3, sqrt3 );
-		Scalar randomy = s.f( -sqrt3, sqrt3 );
-		Scalar randomz = s.f( -sqrt3, sqrt3 );
+		UniformDistribution<Scalar> uniform(Scalar(-sqrt3), Scalar(sqrt3));
+
+		Scalar randomx = uniform(rng);
+		Scalar randomy = uniform(rng);
+		Scalar randomz = uniform(rng);
 
 		// Write to global memory, leaving the 4th element unchanged
 		d_psi[idx] = make_scalar4(randomx, randomy, randomz, d_psi[idx].w);
@@ -198,20 +204,24 @@ __global__ void gpu_stokes_BrownianGridGenerate_kernel(
 	if ( idx < NxNyNz ) {
       
 		// Random number generator
-		detail::Saru s(idx, timestep + seed);
-	
-		// Square root of 3.0 / 2.0
-		Scalar sqrt3d2 = 1.2247448713915889;
-	
+		// Revised logic from TwoStepBDGPU.cu as Saru removed from HOOMD 3+
+		RandomGenerator rng(hoomd::Seed(RNGIdentifier::TwoStepBD, timestep, seed),
+                            hoomd::Counter(idx));
+							// using idx instead of ptag = d_tag[idx]
+
 		// Get random numbers from uniform distribution
 		// on (-sqrt(3/2),sqrt(3/2)) so that variance
 		// of ( reX + reY ) = 1.0
-		Scalar reX = s.f( -sqrt3d2, sqrt3d2 );
-		Scalar reY = s.f( -sqrt3d2, sqrt3d2 );
-		Scalar reZ = s.f( -sqrt3d2, sqrt3d2 );
-		Scalar imX = s.f( -sqrt3d2, sqrt3d2 );
-		Scalar imY = s.f( -sqrt3d2, sqrt3d2 );
-		Scalar imZ = s.f( -sqrt3d2, sqrt3d2 );
+		// Square root of 3.0 / 2.0
+		Scalar sqrt3d2 = 1.2247448713915889;
+		UniformDistribution<Scalar> uniform(Scalar(-sqrt3d2), Scalar(sqrt3d2));
+
+		Scalar reX = uniform(rng);
+		Scalar reY = uniform(rng);
+		Scalar reZ = uniform(rng);
+		Scalar imX = uniform(rng);
+		Scalar imY = uniform(rng);
+		Scalar imZ = uniform(rng);
 		
 		// Modulo arithmetic for indices for current grid point
 		int kk = idx % Nz;
