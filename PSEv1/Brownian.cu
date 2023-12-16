@@ -62,8 +62,8 @@ using namespace hoomd;
 #include <stdio.h>
 #include <math.h>
 
-#include "lapacke.h"
-#include "cblas.h"
+#include "mkl_lapacke.h"
+#include "mkl_cblas.h"
 
 #ifdef WIN32
 #include <cassert>
