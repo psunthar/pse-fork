@@ -19,7 +19,7 @@ Donev, and James W. Swan, The Journal of Chemical Physics, **146**,
  - CMakeLists.txt   : main CMake configuration file for the plugin
  - FindHOOMD.cmake  : script to find a HOOMD-Blue installation to link against
  - README           : This file
- - PSEv1            : Directory containing C++ and CUDA source code that interacts with HOOMD. Also contains python UI level source code that drives the C++ module
+ - pse            : Directory containing C++ and CUDA source code that interacts with HOOMD. Also contains python UI level source code that drives the C++ module
  - cppmodule        : Directory containing C++ and CUDA source code that interacts with HOOMD
  - examples/run.py  : python example to use PSE.
 
@@ -83,7 +83,7 @@ however, these options are unecessary if these libraries have been installed int
 
 By default, make install will install the plugin into
 
-`${HOOMD_ROOT}/lib/python/hoomd/PSEv1`
+`${HOOMD_ROOT}/lib/python/hoomd/pse`
 
 This works if you have `make install`ed hoomd into your home directory. 
 
