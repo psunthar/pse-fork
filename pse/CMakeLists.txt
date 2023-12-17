@@ -1,6 +1,6 @@
 # Maintainer: Andrew M. Fiore
 
-set(COMPONENT_NAME PSEv1)
+set(COMPONENT_NAME pse)
 
 # Check that the HOOMD build configuration supports plugin dependencies
 if(NOT BUILD_MD)
@@ -94,7 +94,7 @@ install(TARGETS _${COMPONENT_NAME}
 # should be copied to the install directory should be listed here.
 set(files
     __init__.py
-    integrate.py
+    methods.py
     shear_function.py
     variant.py
     )
