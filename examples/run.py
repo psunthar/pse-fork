@@ -7,7 +7,7 @@
 import hoomd
 from hoomd import _hoomd
 from hoomd.md import _md
-import hoomd.PSEv1
+import hoomd.pse
 
 import os
 import math
