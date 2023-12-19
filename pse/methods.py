@@ -17,7 +17,7 @@
 
 # First, we need to import the C++ module. It has the same name as this class
 # but with an underscore in front.
-from hoomd.pse import _PSEv1
+from hoomd.pse import _pse
 from hoomd.pse import shear_function
 
 # Next, since we are extending an integrator, we need to bring in the base
@@ -34,7 +34,7 @@ import math
 class PSEv1(hoomd.md.methods.Method):
     # Specifies the Stokes integrator
     #
-    # \param filtG   Filtered Group of particles on which to apply this method.
+    # \param filter  Filtered Group of particles on which to apply this method.
     # \param T       Temperature of the simulation (in energy units)
     # \param seed    Random seed to use for the run. Simulations that are
     #                identical, except for the seed, will follow different
@@ -52,8 +52,8 @@ class PSEv1(hoomd.md.methods.Method):
     # with \a group.
 
     def __init__(self,
-                 filterG,
-                 T,
+                 filter,
+                 kT,
                  seed=0,
                  xi=0.5,
                  error=0.001,
@@ -61,62 +61,159 @@ class PSEv1(hoomd.md.methods.Method):
                  max_strain=0.5,
                  nlist_type="cell"):
 
+        # store metadata
+        param_dict = ParameterDict(filter=ParticleFilter,
+                                   kT=Variant,
+                                   nlist_type=str,
+                                   seed=int,
+                                   xi=float,
+                                   error=float)
+        param_dict.update(
+            dict(kT=kT,
+                 filter=filter,
+                 nlist_type=nlist_type,
+                 seed=seed,
+                 xi=xi,
+                 error=error))
+
+        # set defaults
+        self._param_dict.update(param_dict)
+
         # Print the status of the initialization
-        hoomd.util.print_status_line()
+        # hoomd.util.print_status_line()
 
         # initialize base class
-        hoomd.md.methods.Method.__init__(self)
-        #hoomd.md.integrate._integration_method.__init__(self);
+        # hoomd.md.integrate._integration_method.__init__(self);
+        # There may not be a need as Brownian(Method) does no
+        # super().__init__()
 
         # setup the variant inputs
-        T = hoomd.variant._setup_variant_input(T)
+        # T = hoomd.variant._setup_variant_input(T)
 
         # create the compute thermo
         # compute._get_unique_thermo(group=group);
 
         # create a Thermo group
-        ThermoG = hoomd.md.compute.ThermodynamicQuantities(filterG)
+        # ThermoG = hoomd.md.compute.ThermodynamicQuantities(filter)
 
         # Real space neighborlist cutoff based on error estimate for spectral sums
         self.rcut = math.sqrt(-math.log(error)) / xi
         # If this line is changed, remember to change in C++ code as well!!
 
         # initialize the reflected c++ class
-        if not hoomd.context.exec_conf.isCUDAEnabled():
-            hoomd.context.msg.error(
+        #if not hoomd.context.exec_conf.isCUDAEnabled():
+        #    hoomd.context.msg.error(
+        #        "Sorry, we have not written CPU code for PSE RPY simulation. \n"
+        #    )
+        #    raise RuntimeError('Error creating Stokes')
+        #else:
+
+        # Create a neighborlist exclusively for real space interactions. Use cell lists by
+        # default, but also allow the user to specify
+        #            if (nlist_type.upper() == "CELL"):
+        #
+        #                cl_stokes = _hoomd.CellListGPU(
+        #                    hoomd.context.current.system_definition)
+        #                hoomd.context.current.system.addCompute(cl_stokes, "stokes_cl")
+        #                self.neighbor_list = _md.NeighborListGPUBinned(
+        #                    hoomd.context.current.system_definition, self.rcut, 0.4,
+        #                    cl_stokes)
+        #
+        #            elif (nlist_type.upper() == "TREE"):
+        #
+        #                self.neighbor_list = _md.NeighborListGPUTree(
+        #                    hoomd.context.current.system_definition, self.rcut, 0.4)
+        #
+        #            elif (nlist_type.upper() == "STENCIL"):
+        #
+        #                cl_stokes = _hoomd.CellListGPU(
+        #                    hoomd.context.current.system_definition)
+        #                hoomd.context.current.system.addCompute(cl_stokes, "stokes_cl")
+        #                cls_stokes = _hoomd.CellListStencil(
+        #                    hoomd.context.current.system_definition, cl_stokes)
+        #                hoomd.context.current.system.addCompute(
+        #                    cls_stokes, "stokes_cls")
+        #                self.neighbor_list = _md.NeighborListGPUStencil(
+        #                    hoomd.context.current.system_definition, self.rcut, 0.4,
+        #                    cl_stokes, cls_stokes)
+        #
+        #            else:
+        #                hoomd.context.msg.error(
+        #                    "Invalid neighborlist method specified. Valid options are: cell, tree, stencil. \n"
+        #                )
+        #                raise RuntimeError('Error constructing neighborlist')
+        #
+        #            # Set neighborlist properties
+        #            self.neighbor_list.setEvery(1, True)
+        #            hoomd.context.current.system.addCompute(self.neighbor_list,
+        #                                                    "stokes_nlist")
+        #            self.neighbor_list.countExclusions()
+        #
+        #            # Call the stokes integrator
+        #            # self.cpp_method = _PSEv1.Stokes(hoomd.context.current.system_definition, group.cpp_group, T.cpp_variant, seed, self.neighbor_list, xi, error);
+        #            self.cpp_method = _pse.Stokes(
+        #                hoomd.context.current.system_definition, group.cpp_group,
+        #                T.cpp_variant, seed, self.neighbor_list, xi, error)
+
+        # self.cpp_method.validateGroup() # Todo
+
+        if function_form is not None:
+            # self.cpp_method.setShear(function_form.cpp_function, max_strain)
+            self._cpp_obj.setShear(function_form.cpp_function, max_strain)
+        else:
+            no_shear_function = shear_function.steady(dt=0)
+            # self.cpp_method.setShear(no_shear_function.cpp_function,
+            #  max_strain)
+            self._cpp_obj.setShear(no_shear_function.cpp_function, max_strain)
+
+        self.cpp_method.setParams()  # todo
+
+    def _attach_hook(self):
+        # import code from methods/md/methods.py for Brownian(Method)
+        """Brownian uses RNGs. Warn the user if they did not set the seed."""
+        self._simulation._warn_if_seed_unset()
+
+        sim = self._simulation
+        if isinstance(sim.device, hoomd.device.CPU):
+            hoomd.context.current.device.cpp_msg.error(
                 "Sorry, we have not written CPU code for PSE RPY simulation. \n"
             )
-            raise RuntimeError('Error creating Stokes')
+            raise RuntimeError('Error creating Stokes()')
+
         else:
 
-            # Create a neighborlist exclusively for real space interactions. Use cell lists by
-            # default, but also allow the user to specify
-            if (nlist_type.upper() == "CELL"):
+            buffer = 0.4  # default used in PSE 2.x, hoomd.md.nlist 2.x
 
-                cl_stokes = _hoomd.CellListGPU(
-                    hoomd.context.current.system_definition)
-                hoomd.context.current.system.addCompute(cl_stokes, "stokes_cl")
-                self.neighbor_list = _md.NeighborListGPUBinned(
-                    hoomd.context.current.system_definition, self.rcut, 0.4,
-                    cl_stokes)
+            if (self.nlist_type.upper() == "CELL"):
+                nlist = hoomd.md.nlist.Cell(buffer, default_r_cut=self.rcut)
 
-            elif (nlist_type.upper() == "TREE"):
+#                 cl_stokes = _hoomd.CellListGPU(
+#                     hoomd.context.current.system_definition)
+#                 hoomd.context.current.system.addCompute(cl_stokes, "stokes_cl")
+#                 self.neighbor_list = _md.NeighborListGPUBinned(
+#                     hoomd.context.current.system_definition, self.rcut, 0.4,
+#                     cl_stokes)
 
-                self.neighbor_list = _md.NeighborListGPUTree(
-                    hoomd.context.current.system_definition, self.rcut, 0.4)
+            elif (self.nlist_type.upper() == "TREE"):
+                nlist = hoomd.md.nlist.Tree(buffer, default_r_cut=self.rcut)
 
-            elif (nlist_type.upper() == "STENCIL"):
+#                 self.neighbor_list = _md.NeighborListGPUTree(
+#                     hoomd.context.current.system_definition, self.rcut, 0.4)
 
-                cl_stokes = _hoomd.CellListGPU(
-                    hoomd.context.current.system_definition)
-                hoomd.context.current.system.addCompute(cl_stokes, "stokes_cl")
-                cls_stokes = _hoomd.CellListStencil(
-                    hoomd.context.current.system_definition, cl_stokes)
-                hoomd.context.current.system.addCompute(
-                    cls_stokes, "stokes_cls")
-                self.neighbor_list = _md.NeighborListGPUStencil(
-                    hoomd.context.current.system_definition, self.rcut, 0.4,
-                    cl_stokes, cls_stokes)
+            elif (self.nlist_type.upper() == "STENCIL"):
+                nlist = hoomd.md.nlist.Stencil(buffer, default_r_cut=self.rcut)
+
+
+#                 cl_stokes = _hoomd.CellListGPU(
+#                     hoomd.context.current.system_definition)
+#                 hoomd.context.current.system.addCompute(cl_stokes, "stokes_cl")
+#                 cls_stokes = _hoomd.CellListStencil(
+#                     hoomd.context.current.system_definition, cl_stokes)
+#                 hoomd.context.current.system.addCompute(
+#                     cls_stokes, "stokes_cls")
+#                 self.neighbor_list = _md.NeighborListGPUStencil(
+#                     hoomd.context.current.system_definition, self.rcut, 0.4,
+#                     cl_stokes, cls_stokes)
 
             else:
                 hoomd.context.msg.error(
@@ -124,28 +221,24 @@ class PSEv1(hoomd.md.methods.Method):
                 )
                 raise RuntimeError('Error constructing neighborlist')
 
-            # Set neighborlist properties
-            self.neighbor_list.setEvery(1, True)
-            hoomd.context.current.system.addCompute(self.neighbor_list,
-                                                    "stokes_nlist")
-            self.neighbor_list.countExclusions()
+            self.neighbor_list = nlist._cpp_obj  # of type _md.NeighbourList
+
+            #             # Set neighborlist properties
+            #             self.neighbor_list.setEvery(1, True)
+            #             hoomd.context.current.system.addCompute(self.neighbor_list,
+            #                                                     "stokes_nlist")
+            #             self.neighbor_list.countExclusions()
 
             # Call the stokes integrator
-            # self.cpp_method = _PSEv1.Stokes(hoomd.context.current.system_definition, group.cpp_group, T.cpp_variant, seed, self.neighbor_list, xi, error);
-            self.cpp_method = _PSEv1.Stokes(
-                hoomd.context.current.system_definition, group.cpp_group,
-                T.cpp_variant, seed, self.neighbor_list, xi, error)
+            # self.cpp_method = _pse.Stokes(hoomd.context.current.system_definition, group.cpp_group, T.cpp_variant, seed, self.neighbor_list, xi, error);
 
-        self.cpp_method.validateGroup()
+            self._cpp_obj = _pse.Stokes(sim.state._cpp_sys_def,
+                                        sim.state._get_group(self.filter),
+                                        self.kT, self.seed, self.neighbor_list,
+                                        self.xi, self.error)
 
-        if function_form is not None:
-            self.cpp_method.setShear(function_form.cpp_function, max_strain)
-        else:
-            no_shear_function = shear_function.steady(dt=0)
-            self.cpp_method.setShear(no_shear_function.cpp_function,
-                                     max_strain)
-
-        self.cpp_method.setParams()
+        # Attach param_dict and typeparam_dict
+        super()._attach_hook()
 
     ## Changes parameters of an existing integrator
     # \param self self

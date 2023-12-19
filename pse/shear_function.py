@@ -2,7 +2,7 @@
 # classes representing shear functions, which can be input of an integrator and variant
 # to shear the box of a simulation
 
-from hoomd.pse import _PSEv1
+from hoomd.pse import _pse
 
 import hoomd
 
@@ -53,8 +53,8 @@ class steady(_shear_function):
     # \param zero the time offset
     def __init__(self, dt, shear_rate=0, zero='now'):
         _shear_function.__init__(self, zero)
-        self.cpp_function = _PSEv1.SteadyShearFunction(shear_rate,
-                                                       self._offset, dt)
+        self.cpp_function = _pse.SteadyShearFunction(shear_rate, self._offset,
+                                                     dt)
 
 
 ## concrete class representing simple sinusoidal oscillatory shear
@@ -78,8 +78,8 @@ class sine(_shear_function):
             raise RuntimeError("Error creating shear function")
 
         _shear_function.__init__(self, zero)
-        self.cpp_function = _PSEv1.SinShearFunction(shear_rate, shear_freq,
-                                                    self._offset, dt)
+        self.cpp_function = _pse.SinShearFunction(shear_rate, shear_freq,
+                                                  self._offset, dt)
 
 
 ## concrete class representing chirp oscillatory shear
@@ -93,9 +93,9 @@ class chirp(_shear_function):
     # \param zero the time offset
     def __init__(self, dt, amplitude, omega_0, omega_f, periodT, zero='now'):
         _shear_function.__init__(self, zero)
-        self.cpp_function = _PSEv1.ChirpShearFunction(amplitude, omega_0,
-                                                      omega_f, periodT,
-                                                      self._offset, dt)
+        self.cpp_function = _pse.ChirpShearFunction(amplitude, omega_0,
+                                                    omega_f, periodT,
+                                                    self._offset, dt)
 
 
 ## concrete class representing Tukey window function
@@ -112,8 +112,8 @@ class tukey_window(_shear_function):
             raise RuntimeError("Error creating Tukey window function")
 
         _shear_function.__init__(self, zero)
-        self.cpp_function = _PSEv1.TukeyWindowFunction(periodT, tukey_param,
-                                                       self._offset, dt)
+        self.cpp_function = _pse.TukeyWindowFunction(periodT, tukey_param,
+                                                     self._offset, dt)
 
 
 ## concrete class represeting a windowed shear function
@@ -127,5 +127,5 @@ class windowed(_shear_function):
         _shear_function.__init__(
             self,
             'now')  # zero parameter is not used in windowed class anyways
-        self.cpp_function = _PSEv1.WindowedFunction(function_form.cpp_function,
-                                                    window.cpp_function)
+        self.cpp_function = _pse.WindowedFunction(function_form.cpp_function,
+                                                  window.cpp_function)

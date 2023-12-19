@@ -1,58 +1,58 @@
 # Test BD run with PSE to check if the simulation runs
 
-# This does not validate anything except to confirm that 
+# This does not validate anything except to confirm that
 # all the linkages to library calls are working
 # Use other physical tests with longer runs to validate
 
-import hoomd;
+import hoomd
 from hoomd import _hoomd
 from hoomd.md import _md
 import hoomd.PSEv1
 
-import os;
+import os
 import math
 import itertools
 import gsd.hoomd
 import numpy as np
 
+# Physical parameters
+# ===================
 
-
-## Physical parameters
-
-## Computational parameters
+# Computational parameters
+# ========================
 
 # Approx number of particles (will be rounded to the nearest cube)
 N = 1000
 
-
 # Time stepping information
-dt = 1e-3      # time step
-tf = 1e0       # the final time of the simulation (in units of bare particle diffusion time)
+dt = 1e-3  # time step
+tf = 1e0  # final time of the simulation (bare particle diffusion time units)
 dataDir = 'Data/'
 outFile = 'lattice.gsd'
 
-
 # Particle size
 #
-# Changing this won't change the PSE hydrodynamics, which assumes that all particles
-# have radius = 1.0, and ignores HOOMD's size data. However, might be necessary if 
-# hydrodynamic radius is different from other radii needed.
+# Changing this won't change the PSE hydrodynamics, which assumes that all
+# particles  have radius = 1.0, and ignores HOOMD's size data. However,
+# might be necessary if # hydrodynamic radius is different from other radii
+# needed.
 radius = 1.0
 diameter = 2.0 * radius
 
-nlist_buffer_dist = 0.1 * diameter # distance moved before nlist is rebuilt
+nlist_buffer_dist = 0.1 * diameter  # distance moved before nlist is rebuilt
 
-## Derived parameters
-m = int(np.ceil(N**(1./3)))
-Np = m**3 # recompute N
+# Derived parameters
+# ==================
+m = int(np.ceil(N**(1. / 3)))
+Np = m**3  # recompute N
 
 # space out particle relative to diameter
 spacing = 5 * diameter
 
-L = (m - 1) * spacing # edge length of the cube
+L = (m - 1) * spacing  # edge length of the cube
 
 # symmetrically positioned particles in one dimension
-x = np.linspace(-L/2, L/2, m)
+x = np.linspace(-L / 2, L / 2, m)
 
 # loop over all three directions to get m^3 position vectors
 position = list(itertools.product(x, repeat=3))
@@ -72,18 +72,16 @@ frame.particles.typeid = [0] * Np
 # cubic box.
 frame.configuration.box = [L, L, L, 0, 0, 0]
 
-
 # File output location
-if not os.path.isdir( loc ):
-        os.mkdir( loc )
+if not os.path.isdir(loc):
+    os.mkdir(loc)
 filePath = outDir + '/' + outFile
 
 # write (append) this snapshot to disk
 with gsd.hoomd.open(name=filePath, mode='w') as f:
     f.append(frame)
 
-Nsteps = tf / dt # number of steps
-
+Nsteps = tf / dt  # number of steps
 
 # Type of neighbour list to use for computing pair potentials
 cell = hoomd.md.nlist.Cell(buffer=nlist_buffer_dist)
@@ -91,8 +89,6 @@ cell = hoomd.md.nlist.Cell(buffer=nlist_buffer_dist)
 lj = hoomd.md.pair.LJ(nlist=cell)
 lj.params[('Atype', 'Atype')] = dict(epsilon=1, sigma=1)
 lj.r_cut[('Atype', 'Atype')] = 2.5
-
-
 
 # Simple cubic crystal of 1000 particles
 #L = 64
@@ -107,38 +103,45 @@ lj.r_cut[('Atype', 'Atype')] = 2.5
 #              steady (steady shear)
 #              sine (sinusoidal oscillatory shear)
 #              chirp (chirp frequency sweep)
-function_form = hoomd.PSEv1.shear_function.sine( dt = dt, shear_rate = 1.0, 
-                                                 shear_freq = 1.0 )
+function_form = hoomd.PSEv1.shear_function.sine(dt=dt,
+                                                shear_rate=1.0,
+                                                shear_freq=1.0)
 
 # Set up PSE integrator
 #
 # Arguments to PSE integrator (default values given in parentheses):
 # 	group -- group of particle to act on (should be all)
-#	seed (1) -- Seed for the random number generator used in Brownian calculations
-#       T (1.0) -- Temperature
-#       xi (0.5) -- Ewald splitting parameter. Changing value will not affect results, only speed.
+#	seed (1) -- Seed for the random number generator in Brownian calculations
+#       kT (1.0) -- Temperature
+#       xi (0.5) -- Ewald splitting parameter.
+#                   Changing value will not affect results, only speed.
 #       error (1E-3) -- Calculation error tolerance
-#       function_form (none) -- Functional form for shearing. See above (or source code) for valid options. 
+#       function_form (none) -- Functional form for shearing.
+#       See above (or source code) for valid options.
 
-pse = hoomd.pse.methods.PSEv1( group = hoomd.group.all(), seed = 1, T = 1.0, xi = 0.5, error = 1E-3, function_form = function_form )
-#pse = hoomd.PSEv1.integrate.PSEv1( group = hoomd.group.all(), seed = 1, T = 1.0, xi = 0.5, error = 1E-3, function_form = function_form )
+pse = hoomd.pse.methods.PSEv1(filter=hoomd.filter.All(),
+                              seed=1,
+                              kT=1.0,
+                              xi=0.5,
+                              error=1E-3,
+                              function_form=function_form)
+# pse = hoomd.PSEv1.integrate.PSEv1( group = hoomd.group.all(), seed = 1,
+# T = 1.0, xi = 0.5, error = 1E-3, function_form = function_form )
 
-
-# Set up the MD integrator with timestep
+# the MD integrator with timestep, methods, and forces
 integrator = hoomd.md.Integrator(dt=dt, methods=[pse], forces=[lj])
 
-
-
-## Select the Device (CPU/GPU) for the Simulation object
+# Device (CPU/GPU) for the Simulation object
 device = hoomd.device.auto_select(notice_level=2)
 
+# =====================
+# The actual Simulation
+# =====================
 
-## The actual Simulation
 simulation = hoomd.Simulation(device=device)
-# deprecated: hoomd.context.initialize('');
 
 # Initialise the simulation state
-simulation.create_state_from_snapshot(frame) # from gsd.hoomd.Frame
+simulation.create_state_from_snapshot(frame)  # from gsd.hoomd.Frame
 # simulation.create_state_from_gsd(filename=filePath) # from disk
 
 # Assign the integrator to the simulation
@@ -146,10 +149,3 @@ simulation.operations.integrator = integrator
 
 # Run the simulation for Nsteps timesteps
 simulation.run(Nsteps)
-
-#hoomd.md.integrate.mode_standard(dt=dt)
-#pse = hoomd.PSEv1.integrate.PSEv1( group = hoomd.group.all(), seed = 1, T = 1.0, xi = 0.5, error = 1E-3, function_form = function_form )
-# Run the simulation
-#hoomd.run( nrun )
-
-

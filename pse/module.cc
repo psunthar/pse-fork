@@ -17,7 +17,7 @@ namespace detail
 // specify the python module. Note that the name must explicitly match 
 // the PROJECT() name provided in CMakeLists 
 // (with an underscore in front)
-PYBIND11_MODULE(_PSEv1, m)
+PYBIND11_MODULE(_pse, m)
 {
 // #ifdef ENABLE_CUDA
 #ifdef ENABLE_HIP

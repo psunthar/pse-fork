@@ -1,7 +1,7 @@
 ## \package pse.variant
 # classes representing the variant class to facilitate box_resize
 
-from hoomd.pse import _PSEv1
+from hoomd.pse import _pse
 from hoomd.pse import shear_function
 
 from hoomd import variant
@@ -32,6 +32,6 @@ class shear_variant(hoomd.variant._variant):
             raise RuntimeError('Error creating variant')
 
         # create the c++ mirror class
-        self.cpp_variant = _PSEv1.VariantShearFunction(
+        self.cpp_variant = _pse.VariantShearFunction(
             function_form.cpp_function, int(total_timestep), -max_strain,
             max_strain)
