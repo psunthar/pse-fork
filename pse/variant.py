@@ -5,16 +5,17 @@ from hoomd.pse import _pse
 from hoomd.pse import shear_function
 
 from hoomd import variant
-from hoomd.variant import _variant
+# from hoomd.variant import _variant
 
 from hoomd import _hoomd
 import hoomd
 import sys
 
 
-## Variant class holding a functional form of shear field
+## Variant class holding a functional orm of shear field
 # Used as an argument for box_resize class to deform the box
-class shear_variant(hoomd.variant._variant):
+# class shear_variant(hoomd.variant._variant):
+class ShearVariant(_pse.VariantShearFunction, variant.Variant):
     ## Specify shear field represented by a function form with a limited timesteps
     #
     # \param function_form the functional form of the sinusoidal shear
@@ -23,7 +24,7 @@ class shear_variant(hoomd.variant._variant):
     def __init__(self, function_form, total_timestep, max_strain=0.5):
 
         # initialize the base class
-        _variant.__init__(self)
+    #   _variant.__init__(self)
 
         # check total_timestep is positive
         if total_timestep <= 0:
