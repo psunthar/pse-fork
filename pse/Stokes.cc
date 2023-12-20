@@ -475,8 +475,8 @@ void Stokes::integrateStepOne(unsigned int timestep)
 	// Real space interaction tabulation
 	ArrayHandle<Scalar4> d_ewaldC1(m_ewaldC1, access_location::device, access_mode::read);
 
-        // Calculate the shear rate of the current timestep
-        Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
+    // Calculate the shear rate of the current timestep
+    Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
 
 	// perform the update on the GPU
 	hoomd::kernel::gpu_stokes_step_one(

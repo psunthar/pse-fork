@@ -13,11 +13,11 @@ endif()
 set(_${COMPONENT_NAME}_sources
     module.cc
     Stokes.cc
-    ShearFunction.cc
-    ShearFunctionWrap.cc
-    SpecificShearFunction.cc
-    VariantShearFunction.cc
     )
+#     ShearFunction.cc
+#     ShearFunctionWrap.cc
+#     SpecificShearFunction.cc
+#     VariantShearFunction.cc
 
 # Specify any CUDA sources
 set(_${COMPONENT_NAME}_cu_sources
@@ -95,9 +95,9 @@ install(TARGETS _${COMPONENT_NAME}
 set(files
     __init__.py
     methods.py
-    shear_function.py
-    variant.py
     )
+#   shear_function.py
+#   variant.py
 
 install(FILES ${files}
         DESTINATION ${PYTHON_SITE_INSTALL_DIR}/${COMPONENT_NAME}
