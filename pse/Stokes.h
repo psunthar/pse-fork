@@ -103,11 +103,12 @@ public:
 
     //! Set a new temperature
     /*! \param T new temperature to set */
+ /*
     void setT(std::shared_ptr<Variant> T)
     {
         m_T = T;
     }
-
+*/
     //! Performs the first step of the integration
     virtual void integrateStepOne(unsigned int timestep);
 
@@ -117,13 +118,14 @@ public:
     //! Set the parameters for Ewald summation
     void setParams();
 
+/*
     //! Set the shear rate and shear frequency
     void setShear(std::shared_ptr<ShearFunction> shear_func, Scalar max_strain)
     {
         m_shear_func = shear_func;
         m_max_strain = max_strain;
     }
-
+*/
 protected:
     std::shared_ptr<Variant> m_T; //!< The Temperature of the Stochastic Bath
     unsigned int m_seed;          //!< The seed for the RNG of the Stochastic Bath
@@ -132,7 +134,8 @@ protected:
 
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
 
-    std::shared_ptr<ShearFunction> m_shear_func; //!< mutable shared pointer towards a ShearFunction object
+    //std::shared_ptr<ShearFunction> m_shear_func; //!< mutable shared pointer towards a ShearFunction object
+    std::shared_ptr<> m_shear_func; //!< mutable shared pointer towards a ShearFunction object
     Scalar m_max_strain;                         //!< Maximum total strain before box resizing
 
     Scalar m_xi;                 //!< ewald splitting parameter xi

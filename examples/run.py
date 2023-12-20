@@ -103,9 +103,9 @@ lj.r_cut[('Atype', 'Atype')] = 2.5
 #              steady (steady shear)
 #              sine (sinusoidal oscillatory shear)
 #              chirp (chirp frequency sweep)
-function_form = hoomd.PSEv1.shear_function.sine(dt=dt,
-                                                shear_rate=1.0,
-                                                shear_freq=1.0)
+#function_form = hoomd.PSEv1.shear_function.sine(dt=dt,
+#                                                shear_rate=1.0,
+#                                                shear_freq=1.0)
 
 # Set up PSE integrator
 #

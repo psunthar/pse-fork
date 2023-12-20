@@ -250,19 +250,19 @@ class PSEv1(hoomd.md.methods.Method):
     # integrator = integrate.nve(group=all)
     # \endcode
 
-    def set_params(self, T=None, function_form=None, max_strain=0.5):
-        util.print_status_line()
-        self.check_initialization()
+#    def set_params(self, T=None, function_form=None, max_strain=0.5):
+#        util.print_status_line()
+#        self.check_initialization()
+#
+#        if T is not None:
+#            # setup the variant inputs
+#            T = hoomd.variant._setup_variant_input(T)
+#            self.cpp_method.setT(T.cpp_variant)
+#
+#        if function_form is not None:
+#            self.cpp_method.setShear(function_form.cpp_function, max_strain)
 
-        if T is not None:
-            # setup the variant inputs
-            T = hoomd.variant._setup_variant_input(T)
-            self.cpp_method.setT(T.cpp_variant)
-
-        if function_form is not None:
-            self.cpp_method.setShear(function_form.cpp_function, max_strain)
-
-    ## Stop any shear
-    def stop_shear(self, max_strain=0.5):
-        no_shear_function = shear_function.steady(dt=0)
-        self.cpp_method.setShear(no_shear_function.cpp_function, max_strain)
+#    ## Stop any shear
+#    def stop_shear(self, max_strain=0.5):
+#        no_shear_function = shear_function.steady(dt=0)
+#        self.cpp_method.setShear(no_shear_function.cpp_function, max_strain)

@@ -36,7 +36,7 @@ Disclaimer
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS ``AS IS'' AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND/OR ANY
-WARRANTIES THAT THIS SOFTWARE IS FREE OF INFRINGEMENT ARE DISCLAIMED.
+WAR 
 
 IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
@@ -476,7 +476,9 @@ void Stokes::integrateStepOne(unsigned int timestep)
 	ArrayHandle<Scalar4> d_ewaldC1(m_ewaldC1, access_location::device, access_mode::read);
 
     // Calculate the shear rate of the current timestep
-    Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
+    // Scalar current_shear_rate = m_shear_func -> getShearRate(timestep);
+
+    Scalar current_shear_rate = m_ShearRate->operator()(timestep);
 
 	// perform the update on the GPU
 	hoomd::kernel::gpu_stokes_step_one(
