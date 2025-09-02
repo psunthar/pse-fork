@@ -3,6 +3,9 @@ PSE is a HOOMD plugin by Andrew M. Fiore containing a GPU implemention of the Po
 (PSE) algorithm for calculation of the Rotne-Prager-Yamakawa (RPY)
 hydrodynamic mobility and stochastic thermal displacements. This repository is no longer maintained.
 
+# PSE-Fork
+PSE-Fork is a fork of the main PSE maintained by Prof. P Sunthar (@IIT Bombay) and Prof. Ravi Prakash Jagadeeshan (@Monash University), to support HOOMD-v4 and higher
+
 An alternative maintained GPU implementation can be found in [UAMMD](https://github.com/RaulPPelaez/UAMMD) and is
 accessible using a simple [python interface](https://github.com/RaulPPelaez/UAMMD_PSE_Python).
  
