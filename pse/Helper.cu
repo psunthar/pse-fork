@@ -292,7 +292,7 @@ void gpu_stokes_SetGridk_kernel(
                                 int Ny,
                                 int Nz,
                                 unsigned int NxNyNz,
-                                BoxDim box,
+                                detail::BoxDimGPU box,
                                 Scalar xi,
 				Scalar eta
 				){

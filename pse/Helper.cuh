@@ -1,3 +1,10 @@
+#include "include/device_memory.cuh"
+
+#include "include/box_gpu.cuh"
+#include "include/hoomd_utils.h"
+
+#include "include/config.h"
+
 /*
 Highly Optimized Object-oriented Many-particle Dynamics -- Blue Edition
 (HOOMD-blue) Open Source Software License Copyright 2009-2014 The Regents of
@@ -53,6 +60,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*! \file Helper.cuh
     \brief Declares GPU kernel code for helper functions for the Brownian and Mobility calculations.
 */
+#include "hoomd/BoxDim.h"
 #include "hoomd/ParticleData.cuh"
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/Index1D.h"

@@ -1,3 +1,10 @@
+#include "include/box_gpu.cuh"
+#include "include/hoomd_utils.h"
+
+#include "include/config.h"
+#include "hoomd/BoxDim.h"
+
+
 /*
 Highly Optimized Object-oriented Many-particle Dynamics -- Blue Edition
 (HOOMD-blue) Open Source Software License Copyright 2009-2014 The Regents of
