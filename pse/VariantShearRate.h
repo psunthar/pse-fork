@@ -4,21 +4,24 @@
 #include <pybind11/pybind11.h>
 #include <utility>
 
-#include "HOOMDMath.h"
+#include "hoomd/HOOMDMath.h"
+#include "hoomd/Variant.h"
 
 namespace hoomd
     {
 /** Defines shear rate functions that vary with time steps.
-
-    
 */
-
 class VariantShearRate : public Variant {
-
-
-}
-
-
+    public:
+    virtual ~VariantShearRate() = default;
+    
+    // Implement pure virtual functions from Variant base class
+    virtual Scalar min() override { return Scalar(0); }
+    virtual Scalar max() override { return Scalar(1); }
+    
+    // Pure virtual function to be implemented by derived classes
+    virtual Scalar operator()(uint64_t timestep) = 0;
+};
 
 /** Constant value
 
@@ -27,52 +30,37 @@ class VariantShearRate : public Variant {
 class VariantSteadyShearRate : public VariantShearRate
     {
     public:
-    /** Construct a VariantConstant.
+    /** Construct a VariantSteadyShearRate.
 
         @param value The value.
     */
-    VariantConstant(Scalar value) : m_value(value) { }
+    VariantSteadyShearRate(Scalar value) : m_value(value) { }
 
     /// Return the value.
-    Scalar operator()(uint64_t timestep)
+    Scalar operator()(uint64_t timestep) override
         {
         return m_value;
         }
 
-    /// Set the value.
-    void setValue(Scalar value)
-        {
-        m_value = value;
-        }
+    /// Return the value
+    Scalar getValue() const { return m_value; }
+    
+    /// Set the value
+    void setValue(Scalar value) { m_value = value; }
+    
+    // Implement min/max based on the constant value
+    Scalar min() override { return m_value; }
+    Scalar max() override { return m_value; }
 
-    /// Get the value.
-    Scalar getValue() const
-        {
-        return m_value;
-        }
-
-    /// Returns the given constant, c
-    virtual Scalar min()
-        {
-        return m_value;
-        }
-
-    /// Returns the given constant, c
-    virtual Scalar max()
-        {
-        return m_value;
-        }
-
-    protected:
-    /// The value.
+    private:
     Scalar m_value;
     };
 
 namespace detail
     {
-/// Export Variant classes to Python
-void export_Variant(pybind11::module& m);
-
+/** Export VariantShearRate to Python
+*/
+void export_VariantShearRate(pybind11::module& m);
     } // end namespace detail
 
     } // end namespace hoomd

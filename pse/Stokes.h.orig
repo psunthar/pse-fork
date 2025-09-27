@@ -57,7 +57,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CUFFTCOMPLEX cufftComplex
 #endif
 
-#include "../custom_include/hoomd_types.h"
 #ifndef __STOKES_H__
 #define __STOKES_H__
 

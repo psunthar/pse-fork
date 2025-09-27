@@ -1,24 +1,42 @@
-# From CMakeLists.txt template for building a plugin as an external component.
+cmake_minimum_required(VERSION 3.12)
+project(pse)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.9 FATAL_ERROR)
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Name the plugin project
-project(pse LANGUAGES C CXX)
+# Find Python
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
-# Find the installed HOOMD
-find_package(HOOMD 4.0.0 REQUIRED)
+# Find pybind11 with explicit path
+set(pybind11_DIR "/home/mohit/miniconda3/envs/hoomd-py310/lib/python3.10/site-packages/pybind11/share/cmake/pybind11")
+find_package(pybind11 REQUIRED)
 
-message(STATUS "Found HOOMD ${HOOMD_VERSION}: ${HOOMD_INSTALL_PREFIX}/${PYTHON_SITE_INSTALL_DIR}")
+# PSE source files - CPU only to avoid CUDA compatibility issues
+set(PSE_SOURCES
+    pse/module.cc
+    pse/VariantShearFunction.cc
+    pse/ShearFunctionWrap.cc
+    pse/SpecificShearFunction.cc
+    pse/ShearFunction.cc
+    pse/VariantShearRate.cc
+)
 
-# Force installation to the HOOMD installation location
-set(CMAKE_INSTALL_PREFIX ${HOOMD_INSTALL_PREFIX} CACHE PATH "Installation prefix" FORCE)
+# PSE Python module
+pybind11_add_module(_pse ${PSE_SOURCES})
 
-message(STATUS "CMake Install prefix: ${CMAKE_INSTALL_PREFIX}")
+# Set module properties
+set_property(TARGET _pse PROPERTY CXX_STANDARD 17)
 
-# Enable compiler warnings on gcc and clang (common compilers used by developers)
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas -Wno-deprecated-declarations -Wno-unused-result")
-endif()
+# Add HOOMD include directories
+target_include_directories(_pse PRIVATE 
+    "/home/mohit/miniconda3/envs/hoomd-py310/lib/python3.10/site-packages/hoomd/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/custom_include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pse"
+)
 
-# Add subdirectories
-add_subdirectory(${PROJECT_NAME})
+# Add HOOMD defines
+target_compile_definitions(_pse PRIVATE
+    HOOMD_LONGREAL_SIZE=64
+    HOOMD_SHORTREAL_SIZE=32
+)
