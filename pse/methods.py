@@ -28,6 +28,10 @@ from hoomd import _hoomd
 from hoomd.md import _md
 import math
 
+
+# Import necessary parameter and filter classes
+from hoomd.data import ParameterDict
+from hoomd.filter import ParticleFilter
 # One step overdamped integration with hydrodynamic interactions
 
 
@@ -157,21 +161,15 @@ class PSEv1(hoomd.md.methods.Method):
 
         # self.cpp_method.validateGroup() # Todo
 
-        if function_form is not None:
-            # self.cpp_method.setShear(function_form.cpp_function, max_strain)
-            self._cpp_obj.setShear(function_form.cpp_function, max_strain)
-        else:
-            no_shear_function = shear_function.steady(dt=0)
-            # self.cpp_method.setShear(no_shear_function.cpp_function,
-            #  max_strain)
-            self._cpp_obj.setShear(no_shear_function.cpp_function, max_strain)
+        # Store shear function parameters to set later in _attach_hook
+        self._function_form = function_form
+        self._max_strain = max_strain
 
         self.cpp_method.setParams()  # todo
 
     def _attach_hook(self):
         # import code from methods/md/methods.py for Brownian(Method)
         """Brownian uses RNGs. Warn the user if they did not set the seed."""
-        self._simulation._warn_if_seed_unset()
 
         sim = self._simulation
         if isinstance(sim.device, hoomd.device.CPU):
@@ -232,10 +230,20 @@ class PSEv1(hoomd.md.methods.Method):
             # Call the stokes integrator
             # self.cpp_method = _pse.Stokes(hoomd.context.current.system_definition, group.cpp_group, T.cpp_variant, seed, self.neighbor_list, xi, error);
 
-            self._cpp_obj = _pse.Stokes(sim.state._cpp_sys_def,
-                                        sim.state._get_group(self.filter),
-                                        self.kT, self.seed, self.neighbor_list,
-                                        self.xi, self.error)
+            self._cpp_obj = _pse.Stokes(
+                sim.state._cpp_sys_def,
+                sim.state._get_group(self.filter),
+                self.kT, self.seed, self.neighbor_list,
+                self.xi, self.error
+            )
+
+            # Set up shear function after C++ object creation
+            if self._function_form is not None:
+                self._cpp_obj.setShear(self._function_form.cpp_function, self._max_strain)
+            else:
+                from hoomd.pse import shear_function
+                no_shear_function = shear_function.steady(dt=0)
+                self._cpp_obj.setShear(no_shear_function.cpp_function, self._max_strain)
 
         # Attach param_dict and typeparam_dict
         super()._attach_hook()
